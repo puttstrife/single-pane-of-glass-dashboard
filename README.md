@@ -1,4 +1,4 @@
-# Vantage — Single Pane of Glass Dashboard
+# Mettlence — Single Pane of Glass Dashboard
 
 An admin dashboard that monitors three websites — **Votive Society**, **Ask Sabrina** (asksabrina.com) and
 **Astrolover Sketch** (astroloversketch.com) — on one screen: uptime, load time,
