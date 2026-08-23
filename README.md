@@ -1,6 +1,6 @@
-# Single Pane of Glass Dashboard
+# Vantage — Single Pane of Glass Dashboard
 
-Monitors three websites — **Votive Society**, **Ask Sabrina** (asksabrina.com) and
+An admin dashboard that monitors three websites — **Votive Society**, **Ask Sabrina** (asksabrina.com) and
 **Astrolover Sketch** (astroloversketch.com) — on one screen: uptime, load time,
 errors, funnel, revenue and engagement.
 
@@ -34,7 +34,9 @@ Then open http://localhost:4321.
 | Email | Sent, open, click, unsub and click-to-open per site, plus campaigns ranked by open rate and top buyers by revenue |
 | Chat & retention | Chat surface, sessions, messages per session, average length, drop before purchase, retention |
 
-The sidebar picks the site — and expands into that site's pages, so you can scope
+The sidebar carries the product mark, the site list, the density switch and the
+account block; only the site list scrolls, so the controls stay put. It picks the
+site — and expands into that site's pages, so you can scope
 the whole pane to a single landing version or chat entry. The pill picks the range
 (7 / 30 / 90 days). Both scope every block at once — no per-card filters.
 
@@ -146,6 +148,13 @@ regression on Ask Sabrina's chat entries (resolved), and a Sketch canvas asset
 regression on Astrolover Sketch's chat entries that starts on day 48 and never
 recovers. Delete them from `scripts/generate-data.mjs` for a clean baseline.
 
+## Admin shell
+
+The account block at the foot of the sidebar is a **placeholder**: it opens, closes
+on outside click or Escape, and returns focus, but its three items do nothing. Wire
+them to your admin's auth before shipping, and replace the "Admin User /
+admin@example.com" identity with the signed-in one.
+
 ## Design notes
 
 - **The series palette is validated, not eyeballed.** The three site hues —
@@ -167,9 +176,11 @@ recovers. Delete them from `scripts/generate-data.mjs` for a clean baseline.
 - **Eight pages are never eight lines.** Only the all-sites view is multi-series,
   because three hues are what passed validation. Page comparison is bars in a
   sorted table, which is the right form for many nominal categories anyway.
-- **Scrollbars are pinned to the light scheme.** A wide table's scrollbar inherits
-  the host page's colour-scheme, which paints a dark bar across a white card in a
-  dark-themed host; `color-scheme` and `scrollbar-color` are set on the scroller.
+- **One scrollbar treatment everywhere.** The document, the sidebar, the capped
+  card lists and the wide tables share a single rule, so none of them falls back to
+  the browser default beside a styled one. `color-scheme` is pinned with it: a
+  scrollbar otherwise takes its colour from the host page's scheme, which paints a
+  dark bar across a white card in a dark-themed host.
 - Thin marks, hairline gridlines, and direct labels used sparingly — line ends and
   the funnel bar ends — rather than a number on every point.
 

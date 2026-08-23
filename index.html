@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Website performance — single pane of glass</title>
+<title>Vantage — website performance</title>
 <meta name="description" content="Monitors Votive Society, Ask Sabrina and Astrolover Sketch: uptime, load time, funnel, revenue and engagement on one screen.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -17,10 +17,46 @@
 <div class="app">
 
   <aside class="sidebar">
-    <div class="wordmark">Performance</div>
-    <p class="nav-label" id="nav-label">Websites</p>
-    <nav class="nav" id="nav" aria-labelledby="nav-label"></nav>
-    <p class="sidebar-foot" id="sidebar-foot"></p>
+    <div class="wordmark">
+      <span class="wordmark-mark" aria-hidden="true">V</span>
+      <span class="wordmark-text">Vantage</span>
+    </div>
+
+    <div class="nav-scroll">
+      <p class="nav-label" id="nav-label">Websites</p>
+      <nav class="nav" id="nav" aria-labelledby="nav-label"></nav>
+      <p class="sidebar-foot" id="sidebar-foot"></p>
+    </div>
+
+    <div class="sidebar-footer">
+      <div class="field field--stack">
+        <span id="density-label">Density</span>
+        <div class="segmented segmented--fill" role="group" aria-labelledby="density-label" id="density">
+          <button type="button" data-density="comfortable" aria-pressed="true">Comfortable</button>
+          <button type="button" data-density="compact" aria-pressed="false">Compact</button>
+        </div>
+      </div>
+
+      <!-- Placeholder account block: nothing behind it yet. Wire the menu items
+           to your admin's real auth before shipping. -->
+      <div class="account" id="account">
+        <button class="account-btn" type="button" id="account-btn"
+                aria-expanded="false" aria-haspopup="menu" aria-controls="account-menu">
+          <span class="avatar" aria-hidden="true">AU</span>
+          <span class="account-id">
+            <span class="account-name">Admin User</span>
+            <span class="account-role">admin@example.com</span>
+          </span>
+          <span class="chev" aria-hidden="true">⌃</span>
+        </button>
+        <div class="account-menu" id="account-menu" role="menu" hidden>
+          <button role="menuitem" type="button" data-placeholder>Profile</button>
+          <button role="menuitem" type="button" data-placeholder>Workspace settings</button>
+          <button role="menuitem" type="button" data-placeholder>Sign out</button>
+          <p class="account-note">Placeholder — not wired to auth.</p>
+        </div>
+      </div>
+    </div>
   </aside>
 
   <main class="main" id="main">
@@ -32,10 +68,6 @@
       </div>
       <div class="head-controls">
         <div class="segmented" role="group" aria-label="Time range" id="ranges"></div>
-        <div class="segmented segmented--sm" role="group" aria-label="Density" id="density">
-          <button type="button" data-density="comfortable" aria-pressed="true">Comfortable</button>
-          <button type="button" data-density="compact" aria-pressed="false">Compact</button>
-        </div>
       </div>
     </div>
 

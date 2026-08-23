@@ -1337,6 +1337,38 @@
     });
   }
 
+  /* Placeholder account menu. It opens, closes on outside click or Escape, and
+     returns focus — the behaviour a real one needs. The items do nothing; wire
+     them to the admin's auth before shipping. */
+  function setupAccount() {
+    var btn = document.getElementById('account-btn');
+    var menu = document.getElementById('account-menu');
+    if (!btn || !menu) return;
+
+    function close() {
+      menu.hidden = true;
+      btn.setAttribute('aria-expanded', 'false');
+    }
+    function open() {
+      menu.hidden = false;
+      btn.setAttribute('aria-expanded', 'true');
+      var first = menu.querySelector('button');
+      if (first) first.focus();
+    }
+    btn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      if (menu.hidden) open(); else close();
+    });
+    menu.addEventListener('click', function (e) { e.stopPropagation(); });
+    document.addEventListener('click', function () { if (!menu.hidden) close(); });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && !menu.hidden) { close(); btn.focus(); }
+    });
+    menu.querySelectorAll('[data-placeholder]').forEach(function (item) {
+      item.addEventListener('click', function () { close(); btn.focus(); });
+    });
+  }
+
   function init() {
     document.querySelectorAll('#density button').forEach(function (b) {
       b.addEventListener('click', function () {
@@ -1380,6 +1412,7 @@
     watch('chart-funnel', renderFunnel);
 
     applyDensity();
+    setupAccount();
     setupFolds();
     renderAll();
   }
