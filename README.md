@@ -1,23 +1,12 @@
 # Single Pane of Glass Dashboard
 
-A one-screen marketing performance dashboard. Static HTML, CSS and vanilla JS — no
-build step, no dependencies. Open `index.html` and it runs. The only external
-request is DM Sans from Google Fonts; the page falls back to the system sans if it
-is blocked.
+Monitors three websites — **Votive Society**, **Ask Sabrina** (asksabrina.com) and
+**Astrolover Sketch** (astroloversketch.com) — on one screen: uptime, load time,
+errors, funnel, revenue and engagement.
 
-## What it shows
-
-| Block | Question it answers |
-|---|---|
-| Hero figure + meter | How much marketing-sourced pipeline, and are we on plan? |
-| Efficiency tiles | MQLs, CAC, ROAS, MQL→SQL — each vs. prior equal period and vs. target |
-| Pipeline by channel, by month | Where the pipeline came from and how the mix moved |
-| Funnel | Where prospects drop out, stage by stage |
-| Cost per MQL by channel | Which channels buy leads efficiently |
-| Channel scorecard | Full per-channel table with an on-track / at-risk / off-track call |
-
-The sidebar picks the channel and the pill picks the time range; both scope every
-block at once — no per-card filters.
+Static HTML, CSS and vanilla JS. No build step, no dependencies. Open `index.html`
+and it runs. The only external request is DM Sans from Google Fonts; the page falls
+back to the system sans if it is blocked.
 
 ## Run it
 
@@ -25,78 +14,113 @@ block at once — no per-card filters.
 python3 -m http.server 4321
 ```
 
-Then open http://localhost:4321. Opening `index.html` straight from the filesystem
-also works, because the data is a plain `<script>` include rather than a `fetch`.
+Then open http://localhost:4321.
+
+## What's on the pane
+
+| Block | Question it answers |
+|---|---|
+| Incident banner | Is something broken right now, on which site, since when? |
+| Revenue hero | How much money, and which way is it moving? |
+| Traffic & conversion tiles | Sessions, conversion, bounce, returning users — vs. the prior equal period |
+| Site health | Uptime, median load, error rate, failed API calls, JS errors, rage clicks, per site |
+| Needs attention | Every metric outside its threshold, worst first, computed not hand-written |
+| Revenue by day | Daily revenue per site over the range |
+| Page load by day | Daily median load per site against the target line |
+| Funnel | Where users drop out — whole site, or the chat surface for sites that have one |
+| Traffic mix | Which sources bring the sessions |
+| Website scorecard | Every site, every headline metric, one table |
+| Engagement | Email, chat and retention per site |
+
+The sidebar picks the site and the pill picks the range (7 / 30 / 90 days). Both
+scope every block at once — no per-card filters.
+
+## Relationship to the source design
+
+This is a restructure of the **Website Performance Dashboard** design canvas
+(`design/Website Performance Dashboard (standalone).html`). Its visual system is
+adopted as-is; its information architecture is not.
+
+**Kept verbatim:** DM Sans at `letter-spacing: -0.3px`, brand `#422AFB` /
+`#3311DB`, ink `#1B2559`, muted `#A3AED0`, border `#E9EDF7`, plane `#F4F7FE`,
+white cards at 20px radius under `14px 17px 40px 4px rgba(112,144,176,0.08)`, the
+240px sticky sidebar, the segmented range pill, and the uppercase table head. Its
+sites, funnel losses, traffic mixes, UX figures, email stats and chat metrics are
+all preserved as the anchor values for the data.
+
+**Restructured, and why:**
+
+| Source | Here |
+|---|---|
+| 9 tabs per site (Overview, Traffic, Funnel, Revenue, Marketing, Chat, Retention, UX, Email) | One pane. Health, funnel, revenue and engagement are visible together, because that is how you tell a slow site from a badly converting one. |
+| Pre-formatted strings (`'18.4k'`, `'-61%'`), with longer ranges faked by multiplying the 7-day number by 4.1 or 12.6 | 90 days of daily rows per site. Ranges, deltas, averages and trends are computed from them, so 30d is really 30 days. |
+| Seven CSS `div` bars with no axis, scale, or values | SVG line charts with axes, a target rule, crosshair tooltips, direct end-labels and a table twin. |
+| A hardcoded "Insights" list | Alerts computed from thresholds and period deltas, sorted worst-first and capped at six. |
+| Trend shown as a red or green arrow | Status as icon + label + colour, so it survives colourblindness and greyscale. |
+| Hover-only tooltips on `div`s | Buttons with `aria-label`s, keyboard focus showing the same as hover, and a table view behind every chart. |
+| Five sub-pages per site listed in the sidebar, with no data behind them | Dropped. What is real is the chat surface, which has its own funnel — so sites with chat get a Whole site / Chat toggle instead. Per-page data needs a per-page feed. |
+| Top-buyer names with email addresses | Dropped from the view. A monitoring pane does not need customer contact details on screen. |
+
+**One inconsistency in the source, carried nowhere:** its `conv` figures only
+reconcile for Votive Society (3.8% × 18.4k users ≈ 698 orders). For Ask Sabrina and
+Astrolover Sketch the stated conversion does not produce the stated order count.
+Conversion here is computed as orders ÷ sessions throughout rather than copying a
+number that does not add up.
 
 ## Swap in your own data
 
-`assets/data.js` assigns one object to `window.DASHBOARD_DATA`. Point it at your
-own warehouse export and nothing else has to change:
+`assets/data.js` assigns one object to `window.DASHBOARD_DATA`:
 
 ```js
 window.DASHBOARD_DATA = {
-  meta:     { title, generated, note, currency },
-  targets:  { cac, roas, mqlToSql, pipelinePerMonth },
-  months:   ['2026-01', …],                       // ascending
-  channels: [{ id, name, slot }],                 // slot = categorical colour 1–4
-  funnel:   { ratios: [{ id, name, perMql }] },
-  series:   [{ month, channel, spend, mqls, sqls, customers, pipeline, revenue }],
+  meta:       { title, generated, days, note, currency },
+  thresholds: { uptime, loadMs, errorRate, failedApi, bounce },  // { good, warning }
+  ranges:     [{ id, label, days }],
+  dates:      ['2026-05-26', …],                                  // ascending
+  sites:      [{ id, name, domain, slot, aov, retention, hasChat, chatLabel,
+                 chat, subPages, funnel, chatFunnel, sources, email }],
+  daily:      [{ date, site, sessions, users, newUsers, returningUsers, orders,
+                 revenue, adSpend, loadMs, bounce, errorRate, failedApi,
+                 jsErrors, rageClicks, uptime, incident }],
 };
 ```
 
-The bundled sample data is generated by `node scripts/generate-data.mjs` (seeded, so
-regenerating produces no diff). It is fabricated — replace it before showing anyone
-numbers that are supposed to be real.
+`slot` picks the site's chart colour (1–3). Thresholds drive every status pill and
+alert, so tune them per your SLOs before trusting the colours.
+
+The bundled data comes from `node scripts/generate-data.mjs` — seeded, so
+regenerating produces no diff. It is fabricated. Replace it before showing anyone
+numbers that are meant to be real.
 
 ## Design notes
 
-The dashboard is built on the **Website Performance Dashboard** design system
-(`design/Website Performance Dashboard (standalone).html`). Tokens taken from it
-verbatim: DM Sans at `letter-spacing: -0.3px`, brand `#422AFB` / `#3311DB`, ink
-`#1B2559`, muted `#A3AED0`, border `#E9EDF7`, plane `#F4F7FE`, white cards at
-20px radius under `14px 17px 40px 4px rgba(112,144,176,0.08)`, the 240px sticky
-sidebar, the segmented time-range pill, and the uppercase table head.
-
-Three deliberate extensions, because the source system had no equivalent:
-
-1. **A categorical series palette.** The source has one brand hue plus a green/red
-   trend pair. Charts here need four channel colours, so the brand leads and three
-   further hues were stepped and then validated against the white card surface —
-   `#422AFB → #0F9B9B → #E8730C → #D6408C` passes the lightness-band, chroma,
-   contrast and colourblind gates (worst adjacent CVD ΔE 8.0 tritan / 14.9 protan,
-   normal-vision ΔE 19.5). A brand-hue ordinal ramp (`#A99CFD → #3311DB`) carries
-   the funnel; its light end clears 2:1 on white.
-2. **A warning colour** (`#FFB547`) for the at-risk scorecard state. The source
-   only had good (`#01B574`) and bad (`#E31A1A`).
-3. **No dark mode.** The source system is light-only, so this is too. Tokens are
-   declared in one `:root` block, so a dark set can be added in one place later.
-
-Series colours sit near the status green and red in places, so status never leans
-on hue: every scorecard state ships as icon + label + colour.
-
-Other rules the charts follow:
-
-- **No dual axes anywhere.** Measures on different scales get their own chart.
-- **Every chart has a table twin** and a hover/focus tooltip, so no value is
-  reachable only by hovering.
-- **Funnel bars are scaled to the step rate**, not to the top of the funnel:
-  sessions run ~41× MQLs, and a shared volume scale renders the bottom four stages
-  as invisible slivers.
-- **Colour follows the channel, not its rank** — a channel keeps its hue in every
-  card, and filtering dims the others rather than recolouring the survivors.
-- **Cost per MQL always plots all four channels** (the selected one emphasised)
-  rather than collapsing to a single-bar chart.
-- Thin marks, 2px surface gaps between stacked segments, hairline gridlines, and
-  direct labels used sparingly rather than a number on every mark.
+- **The series palette is validated, not eyeballed.** The three site hues —
+  `#422AFB` (brand), `#0F9B9B`, `#E8730C` — clear the lightness-band, chroma,
+  contrast and colourblind gates against the white card surface on *all* pairs, not
+  just adjacent ones, which is the bar line charts need (worst pair CVD ΔE 14.9,
+  normal-vision 26.9). The funnel uses a brand-hue ordinal ramp
+  (`#A99CFD → #3311DB`) whose light end clears 2:1.
+- **Status colours are separate from series colours.** Good `#01B574` and critical
+  `#E31A1A` come from the source system; warning `#FFB547` is an addition, as the
+  source had no at-risk state. Status never appears without its icon and label.
+- **Light-only**, as the source system is. Tokens live in one `:root` block, so a
+  dark set is a single addition.
+- **No dual axes anywhere.** Revenue and load time get their own charts.
+- **Funnel bars are scaled to the step rate**, not to the top of the funnel — the
+  first stage dwarfs the last, and a shared scale leaves the tail invisible.
+- **Colour follows the site, not its rank.** Filtering dims the others rather than
+  recolouring the survivors.
+- Thin marks, hairline gridlines, and direct labels used sparingly — line ends and
+  the funnel bar ends — rather than a number on every point.
 
 ## Layout
 
 ```
-index.html              markup, sidebar shell and card grid
-assets/styles.css       design-system tokens + components
-assets/app.js           state, filters, SVG charts, tables
-assets/data.js          generated dataset (window.DASHBOARD_DATA)
-data/metrics.json       same dataset as JSON
-scripts/generate-data.mjs  seeded sample-data generator
-design/                 the source design system this dashboard is built on
+index.html                 markup, sidebar shell and card grid
+assets/styles.css          design-system tokens + components
+assets/app.js              state, filters, SVG charts, tables, alerts
+assets/data.js             generated dataset (window.DASHBOARD_DATA)
+data/metrics.json          same dataset as JSON
+scripts/generate-data.mjs  seeded generator, anchored to the source figures
+design/                    the source design canvas this is built from
 ```

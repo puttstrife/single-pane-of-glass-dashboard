@@ -97,9 +97,17 @@ h1, h2, h3, p { margin: 0; }
 }
 .nav button:hover { background: var(--plane); }
 .nav button[aria-current="true"] { background: rgba(66, 42, 251, 0.08); color: var(--brand); font-weight: 700; }
-.nav .dot { width: 8px; height: 8px; border-radius: 3px; flex: none; }
-.nav .spend { margin-left: auto; font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
-.nav button[aria-current="true"] .spend { color: var(--brand); }
+.nav button { align-items: flex-start; }
+.nav .nav-name { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.nav .nav-domain { font-size: 11px; font-weight: 400; color: var(--muted); }
+.nav button[aria-current="true"] .nav-domain { color: var(--brand); opacity: 0.75; }
+.nav .nav-meta { margin-left: auto; font-size: 11px; font-weight: 500; color: var(--muted); padding-top: 2px; }
+.nav button[aria-current="true"] .nav-meta { color: var(--brand); }
+.status-dot { width: 8px; height: 8px; border-radius: 999px; flex: none; margin-top: 6px; }
+.status-dot[data-status="good"]     { background: var(--good); }
+.status-dot[data-status="warning"]  { background: var(--warning); }
+.status-dot[data-status="critical"] { background: var(--critical); }
+.sidebar-foot { margin-top: var(--sp-5); font-size: 11px; color: var(--muted); }
 
 .main { flex: 1; min-width: 0; padding: var(--sp-7) var(--sp-8) 56px; }
 
@@ -267,3 +275,54 @@ td { font-variant-numeric: tabular-nums; }
 
 .footnote { margin-top: var(--sp-6); font-size: 13px; color: var(--muted); }
 .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; }
+
+/* ── Incident banner ──────────────────────────────────────── */
+.banner {
+  display: flex; align-items: flex-start; gap: var(--sp-3);
+  background: var(--card); border-radius: var(--radius-card);
+  box-shadow: var(--shadow); padding: var(--sp-4) var(--sp-5);
+  margin-bottom: var(--sp-5); font-size: 14px;
+  border-left: 4px solid var(--muted);
+}
+.banner[data-status="warning"]  { border-left-color: var(--warning); }
+.banner[data-status="critical"] { border-left-color: var(--critical); }
+.banner .glyph { font-size: 12px; line-height: 1.5; }
+.banner[data-status="warning"] .glyph  { color: var(--warning); }
+.banner[data-status="critical"] .glyph { color: var(--critical); }
+.banner strong { font-weight: 700; }
+
+/* ── Alerts list ──────────────────────────────────────────── */
+.alerts { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--sp-3); }
+.alert {
+  display: flex; align-items: flex-start; gap: var(--sp-3);
+  font-size: 14px; padding: var(--sp-3) var(--sp-4);
+  background: var(--plane); border-radius: var(--radius-pill);
+}
+.alert .glyph { font-size: 11px; line-height: 1.6; flex: none; }
+.alert[data-status="good"] .glyph     { color: var(--good); }
+.alert[data-status="warning"] .glyph  { color: var(--warning); }
+.alert[data-status="critical"] .glyph { color: var(--critical); }
+.alert strong { font-weight: 700; }
+.alert--more { color: var(--muted); font-size: 13px; background: none; padding-left: 0; }
+
+.callout { margin-top: var(--sp-4); font-size: 13px; color: var(--muted); }
+.card-actions { display: inline-flex; align-items: center; gap: var(--sp-3); }
+.segmented--sm button { padding: 5px 10px; min-height: 28px; font-size: 12px; }
+
+/* ── Table extras ─────────────────────────────────────────── */
+.row-sub { display: block; font-size: 11px; font-weight: 400; color: var(--muted); padding-left: 15px; }
+tr[data-selected="false"] { opacity: 0.42; }
+.metric { font-variant-numeric: tabular-nums; }
+.metric[data-status="warning"]  { color: var(--navy); font-weight: 700; }
+.metric[data-status="critical"] { color: var(--critical); font-weight: 700; }
+
+.bar-cell { width: 34%; min-width: 120px; }
+.bar-track { display: block; height: 8px; border-radius: 999px; background: var(--border); overflow: hidden; }
+.bar-fill { display: block; height: 100%; border-radius: 999px; background: var(--brand); }
+
+/* ── Chart extras ─────────────────────────────────────────── */
+.threshold { stroke: var(--warning); stroke-width: 1.5; }
+.threshold-label { fill: var(--muted); }
+.crosshair { stroke: var(--muted); stroke-width: 1; pointer-events: none; }
+
+#hero-spark svg { display: block; width: 100%; height: auto; }

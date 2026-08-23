@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Marketing performance — single pane of glass</title>
-<meta name="description" content="One-screen marketing performance dashboard: pipeline, CAC, ROAS, funnel and a channel scorecard.">
+<title>Website performance — single pane of glass</title>
+<meta name="description" content="Monitors Votive Society, Ask Sabrina and Astrolover Sketch: uptime, load time, funnel, revenue and engagement on one screen.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap">
@@ -18,27 +18,27 @@
 
   <aside class="sidebar">
     <div class="wordmark">Performance</div>
-    <p class="nav-label" id="nav-label">Channels</p>
+    <p class="nav-label" id="nav-label">Websites</p>
     <nav class="nav" id="nav" aria-labelledby="nav-label"></nav>
+    <p class="sidebar-foot" id="sidebar-foot"></p>
   </aside>
 
   <main class="main" id="main">
+
     <div class="page-head">
       <div>
-        <h1 id="page-title">All channels</h1>
+        <h1 id="page-title">All websites</h1>
         <p class="sub" id="page-sub">—</p>
       </div>
-      <div class="segmented" role="group" aria-label="Time range">
-        <button type="button" data-period="3" aria-pressed="false">3 months</button>
-        <button type="button" data-period="6" aria-pressed="true">6 months</button>
-        <button type="button" data-period="12" aria-pressed="false">12 months</button>
-      </div>
+      <div class="segmented" role="group" aria-label="Time range" id="ranges"></div>
     </div>
+
+    <div id="banner"></div>
 
     <div class="grid">
 
       <section class="card card--hero" aria-labelledby="h-hero">
-        <div class="card-head"><h2 id="h-hero">Marketing-sourced pipeline</h2></div>
+        <div class="card-head"><h2 id="h-hero">Revenue</h2></div>
         <p class="hero-label" id="hero-scope">—</p>
         <p class="hero-value" id="hero-value">—</p>
         <div class="hero-foot">
@@ -46,52 +46,88 @@
           <span class="hero-note" id="hero-note"></span>
         </div>
         <div class="hero-fill"></div>
-        <div class="meter" id="hero-meter"></div>
+        <div id="hero-spark"></div>
       </section>
 
       <section class="card card--tiles" aria-labelledby="h-tiles">
         <div class="card-head">
-          <h2 id="h-tiles">Efficiency &amp; quality</h2>
+          <h2 id="h-tiles">Traffic &amp; conversion</h2>
           <span class="hint">vs. prior equal period</span>
         </div>
         <div class="tiles" id="tiles"></div>
       </section>
 
-      <section class="card" aria-labelledby="h-pipe">
+      <section class="card" aria-labelledby="h-health">
         <div class="card-head">
-          <h2 id="h-pipe">Pipeline by channel, by month</h2>
-          <button class="toggle-table" type="button" data-table-for="pipe" aria-expanded="false">Table</button>
+          <h2 id="h-health">Site health</h2>
+          <span class="hint" id="health-hint"></span>
         </div>
-        <div class="chart" id="chart-pipe"></div>
-        <div class="legend" id="legend-pipe" role="group" aria-label="Channels — toggle to emphasise"></div>
-        <div class="table-wrap" id="table-pipe" hidden></div>
+        <div class="table-wrap" id="table-health"></div>
+      </section>
+
+      <section class="card" aria-labelledby="h-attention">
+        <div class="card-head">
+          <h2 id="h-attention">Needs attention</h2>
+          <span class="hint">Computed from thresholds and period deltas</span>
+        </div>
+        <ul class="alerts" id="alerts"></ul>
+      </section>
+
+      <section class="card card--half" aria-labelledby="h-rev">
+        <div class="card-head">
+          <h2 id="h-rev">Revenue by day</h2>
+          <button class="toggle-table" type="button" data-table-for="rev" aria-expanded="false">Table</button>
+        </div>
+        <div class="chart" id="chart-rev"></div>
+        <div class="legend" id="legend-rev" role="group" aria-label="Websites — toggle to emphasise"></div>
+        <div class="table-wrap" id="table-rev" hidden></div>
+      </section>
+
+      <section class="card card--half" aria-labelledby="h-load">
+        <div class="card-head">
+          <h2 id="h-load">Page load time by day</h2>
+          <button class="toggle-table" type="button" data-table-for="load" aria-expanded="false">Table</button>
+        </div>
+        <div class="chart" id="chart-load"></div>
+        <div class="legend" id="legend-load" role="group" aria-label="Websites — toggle to emphasise"></div>
+        <div class="table-wrap" id="table-load" hidden></div>
       </section>
 
       <section class="card card--half" aria-labelledby="h-funnel">
         <div class="card-head">
           <h2 id="h-funnel">Funnel</h2>
-          <button class="toggle-table" type="button" data-table-for="funnel" aria-expanded="false">Table</button>
+          <div class="card-actions">
+            <div class="segmented segmented--sm" role="group" aria-label="Funnel surface" id="funnel-surface"></div>
+            <button class="toggle-table" type="button" data-table-for="funnel" aria-expanded="false">Table</button>
+          </div>
         </div>
         <div class="chart" id="chart-funnel"></div>
+        <p class="callout" id="funnel-callout"></p>
         <div class="table-wrap" id="table-funnel" hidden></div>
       </section>
 
-      <section class="card card--half" aria-labelledby="h-cpa">
+      <section class="card card--half" aria-labelledby="h-mix">
         <div class="card-head">
-          <h2 id="h-cpa">Cost per MQL by channel</h2>
-          <span class="hint" id="cpa-hint"></span>
-          <button class="toggle-table" type="button" data-table-for="cpa" aria-expanded="false">Table</button>
+          <h2 id="h-mix">Traffic mix</h2>
+          <span class="hint">Share of sessions</span>
         </div>
-        <div class="chart" id="chart-cpa"></div>
-        <div class="table-wrap" id="table-cpa" hidden></div>
+        <div class="table-wrap" id="table-mix"></div>
       </section>
 
       <section class="card" aria-labelledby="h-score">
         <div class="card-head">
-          <h2 id="h-score">Channel scorecard</h2>
-          <span class="hint">Status = ROAS against target</span>
+          <h2 id="h-score">Website scorecard</h2>
+          <span class="hint">Every site, current range</span>
         </div>
         <div class="table-wrap" id="table-score"></div>
+      </section>
+
+      <section class="card" aria-labelledby="h-engage">
+        <div class="card-head">
+          <h2 id="h-engage">Engagement</h2>
+          <span class="hint">Email, chat and retention</span>
+        </div>
+        <div class="table-wrap" id="table-engage"></div>
       </section>
 
     </div>
