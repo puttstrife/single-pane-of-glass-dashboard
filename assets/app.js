@@ -7,7 +7,7 @@
   var D = window.DASHBOARD_DATA;
   var SVG_NS = 'http://www.w3.org/2000/svg';
 
-  /* ── tokens read from CSS so charts follow the active theme ── */
+  /* ── chart colours come from the CSS tokens, never hard-coded here ── */
   function token(name) {
     return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
   }
@@ -40,8 +40,7 @@
   var state = {
     period: 6,
     channel: 'all',
-    emphasis: null,          // channel id hovered/pressed in the legend
-    theme: localStorage.getItem('spg-theme') || 'system'
+    emphasis: null           // channel id hovered/pressed in the legend
   };
 
   function monthsInScope() { return D.months.slice(-state.period); }
@@ -182,8 +181,8 @@
     var y = function (v) { return h - pad - ((v - min) / span) * (h - pad * 2); };
     var d = values.map(function (v, i) { return (i ? 'L' : 'M') + x(i).toFixed(1) + ',' + y(v).toFixed(1); }).join('');
     return svg('svg', { class: 'spark', width: w, height: h, 'aria-hidden': 'true', focusable: 'false' }, [
-      svg('path', { d: d, fill: 'none', stroke: token('--text-muted'), 'stroke-width': 2, 'stroke-linecap': 'round', 'stroke-linejoin': 'round', opacity: 0.55 }),
-      svg('circle', { cx: x(values.length - 1), cy: y(values[values.length - 1]), r: 4, fill: seriesColor(1), stroke: token('--surface-1'), 'stroke-width': 2 })
+      svg('path', { d: d, fill: 'none', stroke: token('--muted'), 'stroke-width': 2, 'stroke-linecap': 'round', 'stroke-linejoin': 'round', opacity: 0.55 }),
+      svg('circle', { cx: x(values.length - 1), cy: y(values[values.length - 1]), r: 4, fill: token('--brand'), stroke: token('--card'), 'stroke-width': 2 })
     ]);
   }
 
@@ -196,7 +195,7 @@
       (state.channel === 'all' ? 1 : 1 / D.channels.length);
 
     document.getElementById('hero-scope').textContent =
-      monthLong(months[0]) + ' – ' + monthLong(months[months.length - 1]) +
+      'Last ' + months.length + ' months' +
       (state.channel === 'all' ? ' · all channels' : ' · ' + channelName(state.channel));
     document.getElementById('hero-value').textContent = money(curr.pipeline);
 
@@ -519,7 +518,9 @@
     var tip = makeTooltip(host);
 
     var months = monthsInScope();
-    var chans = activeChannels();
+    // This card is a comparison, so it always plots every channel — a channel
+    // filter emphasises one instead of reducing the chart to a single bar.
+    var chans = D.channels;
     var rows = chans.map(function (c) {
       var k = kpis(rowsFor(months, c.id));
       var kPrev = kpis(rowsFor(priorMonths(), c.id));
@@ -533,7 +534,6 @@
     var height = Math.max(m.top + m.bottom + rows.length * rowH, 140);
     var plotW = width - m.left - m.right;
     var max = Math.max.apply(null, rows.map(function (r) { return r.cpm; })) || 1;
-    var color = seriesColor(1);
 
     var root = svg('svg', { width: width, height: height, role: 'img',
       'aria-label': 'Bars: blended cost per MQL by channel for the selected period.' });
@@ -543,7 +543,13 @@
       var w = Math.max(3, (r.cpm / max) * plotW);
       root.appendChild(svg('text', { class: 'mark-label', x: m.left - 10, y: y + barH / 2 + 4,
         'text-anchor': 'end', text: r.channel.name }));
-      root.appendChild(svg('path', { d: endRoundedPathH(m.left, y, w, barH, 4), fill: color }));
+      // Colour follows the channel, so a channel keeps the same hue in every
+      // card; the filter dims the others rather than recolouring the survivors.
+      var selected = state.channel === 'all' || state.channel === r.channel.id;
+      var bar = svg('path', { d: endRoundedPathH(m.left, y, w, barH, 4),
+        fill: seriesColor(r.channel.slot) });
+      if (!selected) bar.setAttribute('data-dim', 'true');
+      root.appendChild(bar);
       root.appendChild(svg('text', { class: 'mark-label', x: m.left + w + 8, y: y + barH / 2 + 4,
         text: moneyExact(r.cpm) }));
 
@@ -569,6 +575,13 @@
     });
 
     host.appendChild(root);
+
+    var hint = document.getElementById('cpa-hint');
+    if (hint) {
+      hint.textContent = state.channel === 'all'
+        ? 'All channels'
+        : channelName(state.channel) + ' highlighted';
+    }
 
     var tHost = document.getElementById('table-cpa');
     clear(tHost);
@@ -655,9 +668,11 @@
   /* ── orchestration ────────────────────────────────────────── */
   function renderAll() {
     var months = monthsInScope();
-    document.getElementById('scope-note').textContent =
-      months.length + ' months · ' +
-      (state.channel === 'all' ? D.channels.length + ' channels' : channelName(state.channel));
+    document.getElementById('page-title').textContent =
+      state.channel === 'all' ? 'All channels' : channelName(state.channel);
+    document.getElementById('page-sub').textContent =
+      monthLong(months[0]) + ' – ' + monthLong(months[months.length - 1]) + ' · ' + months.length + ' months';
+    renderNav();
     renderHero();
     renderTiles();
     renderPipeline();
@@ -666,29 +681,41 @@
     renderScorecard();
   }
 
-  function applyTheme() {
-    document.documentElement.setAttribute('data-theme', state.theme === 'system' ? '' : state.theme);
-    document.querySelectorAll('[data-theme-set]').forEach(function (b) {
-      b.setAttribute('aria-pressed', String(b.getAttribute('data-theme-set') === state.theme));
+  /* ── sidebar: the channel filter, in the source's nav pattern ── */
+  function renderNav() {
+    var host = document.getElementById('nav');
+    var months = monthsInScope();
+    clear(host);
+
+    var items = [{ id: 'all', name: 'All channels', slot: null }].concat(D.channels);
+    items.forEach(function (c) {
+      var k = kpis(rowsFor(months, c.id));
+      var btn = el('button', {
+        type: 'button', 'aria-current': String(state.channel === c.id),
+        onclick: function () {
+          if (state.channel === c.id) return;
+          state.channel = c.id; state.emphasis = null; renderAll();
+        }
+      });
+      if (c.slot) btn.appendChild(swatchDot(seriesColor(c.slot)));
+      btn.appendChild(el('span', { text: c.name }));
+      btn.appendChild(el('span', { class: 'spend', text: money(k.spend) }));
+      host.appendChild(btn);
     });
+  }
+  function swatchDot(color) {
+    var s = el('span', { class: 'dot' }); s.style.background = color; return s;
   }
 
   function init() {
-    var sel = document.getElementById('f-channel');
-    D.channels.forEach(function (c) { sel.appendChild(el('option', { value: c.id, text: c.name })); });
-
-    document.getElementById('f-period').addEventListener('change', function (e) {
-      state.period = +e.target.value; renderAll();
-    });
-    sel.addEventListener('change', function (e) {
-      state.channel = e.target.value; state.emphasis = null; renderAll();
-    });
-
-    document.querySelectorAll('[data-theme-set]').forEach(function (b) {
+    var periodButtons = [].slice.call(document.querySelectorAll('[data-period]'));
+    periodButtons.forEach(function (b) {
       b.addEventListener('click', function () {
-        state.theme = b.getAttribute('data-theme-set');
-        localStorage.setItem('spg-theme', state.theme);
-        applyTheme(); renderAll();   // charts re-read the tokens
+        state.period = +b.getAttribute('data-period');
+        periodButtons.forEach(function (o) {
+          o.setAttribute('aria-pressed', String(o === b));
+        });
+        renderAll();
       });
     });
 
@@ -704,8 +731,8 @@
       });
     });
 
-    document.getElementById('asof').textContent = monthLong(D.months[D.months.length - 1]);
-    document.getElementById('footnote').textContent = D.meta.note;
+    document.getElementById('footnote').textContent =
+      'Data through ' + monthLong(D.months[D.months.length - 1]) + '. ' + D.meta.note;
 
     // Charts are sized to their container in real pixels (crisper than scaling a
     // viewBox), so they have to be redrawn whenever that container changes width.
@@ -725,11 +752,6 @@
     watch('chart-pipe', renderPipeline);
     watch('chart-funnel', renderFunnel);
     watch('chart-cpa', renderCpa);
-    matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function () {
-      if (state.theme === 'system') renderAll();
-    });
-
-    applyTheme();
     renderAll();
   }
 

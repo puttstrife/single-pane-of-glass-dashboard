@@ -1,7 +1,9 @@
 # Single Pane of Glass Dashboard
 
 A one-screen marketing performance dashboard. Static HTML, CSS and vanilla JS — no
-build step, no dependencies, no network calls. Open `index.html` and it runs.
+build step, no dependencies. Open `index.html` and it runs. The only external
+request is DM Sans from Google Fonts; the page falls back to the system sans if it
+is blocked.
 
 ## What it shows
 
@@ -14,7 +16,8 @@ build step, no dependencies, no network calls. Open `index.html` and it runs.
 | Cost per MQL by channel | Which channels buy leads efficiently |
 | Channel scorecard | Full per-channel table with an on-track / at-risk / off-track call |
 
-One filter row (period, channel) scopes every block at once — no per-card filters.
+The sidebar picks the channel and the pill picks the time range; both scope every
+block at once — no per-card filters.
 
 ## Run it
 
@@ -47,30 +50,53 @@ numbers that are supposed to be real.
 
 ## Design notes
 
-- **Colour is validated, not eyeballed.** The four categorical slots clear the
-  colourblind-separation, lightness-band, chroma and contrast checks in both light
-  and dark mode (worst adjacent CVD ΔE 9.1 light / 8.4 dark).
-- **Dark mode is selected, not flipped.** Each token has its own dark value,
-  declared under both `prefers-color-scheme` and `[data-theme]`, so the toggle wins
-  either way.
+The dashboard is built on the **Website Performance Dashboard** design system
+(`design/Website Performance Dashboard (standalone).html`). Tokens taken from it
+verbatim: DM Sans at `letter-spacing: -0.3px`, brand `#422AFB` / `#3311DB`, ink
+`#1B2559`, muted `#A3AED0`, border `#E9EDF7`, plane `#F4F7FE`, white cards at
+20px radius under `14px 17px 40px 4px rgba(112,144,176,0.08)`, the 240px sticky
+sidebar, the segmented time-range pill, and the uppercase table head.
+
+Three deliberate extensions, because the source system had no equivalent:
+
+1. **A categorical series palette.** The source has one brand hue plus a green/red
+   trend pair. Charts here need four channel colours, so the brand leads and three
+   further hues were stepped and then validated against the white card surface —
+   `#422AFB → #0F9B9B → #E8730C → #D6408C` passes the lightness-band, chroma,
+   contrast and colourblind gates (worst adjacent CVD ΔE 8.0 tritan / 14.9 protan,
+   normal-vision ΔE 19.5). A brand-hue ordinal ramp (`#A99CFD → #3311DB`) carries
+   the funnel; its light end clears 2:1 on white.
+2. **A warning colour** (`#FFB547`) for the at-risk scorecard state. The source
+   only had good (`#01B574`) and bad (`#E31A1A`).
+3. **No dark mode.** The source system is light-only, so this is too. Tokens are
+   declared in one `:root` block, so a dark set can be added in one place later.
+
+Series colours sit near the status green and red in places, so status never leans
+on hue: every scorecard state ships as icon + label + colour.
+
+Other rules the charts follow:
+
 - **No dual axes anywhere.** Measures on different scales get their own chart.
 - **Every chart has a table twin** and a hover/focus tooltip, so no value is
-  reachable only by hovering, and no meaning is carried by colour alone — status
-  ships as icon + label + colour.
+  reachable only by hovering.
 - **Funnel bars are scaled to the step rate**, not to the top of the funnel:
   sessions run ~41× MQLs, and a shared volume scale renders the bottom four stages
   as invisible slivers.
-- Thin marks, 2px surface gaps between stacked segments, hairline solid gridlines,
-  and direct labels used sparingly (the peak month, the bar ends) rather than a
-  number on every mark.
+- **Colour follows the channel, not its rank** — a channel keeps its hue in every
+  card, and filtering dims the others rather than recolouring the survivors.
+- **Cost per MQL always plots all four channels** (the selected one emphasised)
+  rather than collapsing to a single-bar chart.
+- Thin marks, 2px surface gaps between stacked segments, hairline gridlines, and
+  direct labels used sparingly rather than a number on every mark.
 
 ## Layout
 
 ```
-index.html              markup and card grid
-assets/styles.css       design tokens + components
+index.html              markup, sidebar shell and card grid
+assets/styles.css       design-system tokens + components
 assets/app.js           state, filters, SVG charts, tables
 assets/data.js          generated dataset (window.DASHBOARD_DATA)
 data/metrics.json       same dataset as JSON
 scripts/generate-data.mjs  seeded sample-data generator
+design/                 the source design system this dashboard is built on
 ```

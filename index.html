@@ -1,113 +1,104 @@
 <!doctype html>
-<html lang="en" data-theme="">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Marketing performance — single pane of glass</title>
-<meta name="description" content="One-screen marketing performance dashboard: pipeline, CAC, ROAS, funnel and channel scorecard.">
+<meta name="description" content="One-screen marketing performance dashboard: pipeline, CAC, ROAS, funnel and a channel scorecard.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap">
 <link rel="stylesheet" href="assets/styles.css">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><rect width='16' height='16' rx='4' fill='%232a78d6'/></svg>">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><rect width='16' height='16' rx='4' fill='%23422AFB'/></svg>">
 </head>
 <body>
 <a class="skip-link" href="#main">Skip to dashboard</a>
 
-<div class="shell">
-  <header class="masthead">
-    <div>
-      <h1>Marketing performance</h1>
-      <p class="sub">Single pane of glass · sample data through <span id="asof">—</span></p>
-    </div>
-    <div class="field">
-      <span id="theme-label">Theme</span>
-      <div class="segmented" role="group" aria-labelledby="theme-label">
-        <button type="button" data-theme-set="light" aria-pressed="false">Light</button>
-        <button type="button" data-theme-set="dark" aria-pressed="false">Dark</button>
-        <button type="button" data-theme-set="system" aria-pressed="true">System</button>
+<div class="app">
+
+  <aside class="sidebar">
+    <div class="wordmark">Performance</div>
+    <p class="nav-label" id="nav-label">Channels</p>
+    <nav class="nav" id="nav" aria-labelledby="nav-label"></nav>
+  </aside>
+
+  <main class="main" id="main">
+    <div class="page-head">
+      <div>
+        <h1 id="page-title">All channels</h1>
+        <p class="sub" id="page-sub">—</p>
+      </div>
+      <div class="segmented" role="group" aria-label="Time range">
+        <button type="button" data-period="3" aria-pressed="false">3 months</button>
+        <button type="button" data-period="6" aria-pressed="true">6 months</button>
+        <button type="button" data-period="12" aria-pressed="false">12 months</button>
       </div>
     </div>
-  </header>
 
-  <!-- One filter row, above everything it scopes. No per-card filters. -->
-  <div class="filters" role="group" aria-label="Dashboard filters">
-    <label class="field">
-      <span>Period</span>
-      <select class="control" id="f-period">
-        <option value="3">Last 3 months</option>
-        <option value="6" selected>Last 6 months</option>
-        <option value="12">Last 12 months</option>
-      </select>
-    </label>
-    <label class="field">
-      <span>Channel</span>
-      <select class="control" id="f-channel">
-        <option value="all" selected>All channels</option>
-      </select>
-    </label>
-    <div class="spacer"></div>
-    <p class="sub" id="scope-note" aria-live="polite"></p>
-  </div>
+    <div class="grid">
 
-  <main id="main" class="grid">
+      <section class="card card--hero" aria-labelledby="h-hero">
+        <div class="card-head"><h2 id="h-hero">Marketing-sourced pipeline</h2></div>
+        <p class="hero-label" id="hero-scope">—</p>
+        <p class="hero-value" id="hero-value">—</p>
+        <div class="hero-foot">
+          <span id="hero-delta"></span>
+          <span class="hero-note" id="hero-note"></span>
+        </div>
+        <div class="hero-fill"></div>
+        <div class="meter" id="hero-meter"></div>
+      </section>
 
-    <section class="card card--hero" aria-labelledby="h-hero">
-      <div class="card-head"><h2 id="h-hero">Marketing-sourced pipeline</h2></div>
-      <p class="hero-label" id="hero-scope">—</p>
-      <p class="hero-value" id="hero-value">—</p>
-      <div class="hero-foot">
-        <span id="hero-delta"></span>
-        <span class="hero-note" id="hero-note"></span>
-      </div>
-      <div class="hero-fill"></div>
-      <div class="meter" id="hero-meter"></div>
-    </section>
+      <section class="card card--tiles" aria-labelledby="h-tiles">
+        <div class="card-head">
+          <h2 id="h-tiles">Efficiency &amp; quality</h2>
+          <span class="hint">vs. prior equal period</span>
+        </div>
+        <div class="tiles" id="tiles"></div>
+      </section>
 
-    <section class="card card--tiles" aria-labelledby="h-tiles">
-      <div class="card-head">
-        <h2 id="h-tiles">Efficiency &amp; quality</h2>
-        <span class="hint">vs. prior equal period</span>
-      </div>
-      <div class="tiles" id="tiles"></div>
-    </section>
+      <section class="card" aria-labelledby="h-pipe">
+        <div class="card-head">
+          <h2 id="h-pipe">Pipeline by channel, by month</h2>
+          <button class="toggle-table" type="button" data-table-for="pipe" aria-expanded="false">Table</button>
+        </div>
+        <div class="chart" id="chart-pipe"></div>
+        <div class="legend" id="legend-pipe" role="group" aria-label="Channels — toggle to emphasise"></div>
+        <div class="table-wrap" id="table-pipe" hidden></div>
+      </section>
 
-    <section class="card" aria-labelledby="h-pipe">
-      <div class="card-head">
-        <h2 id="h-pipe">Pipeline by channel, by month</h2>
-        <button class="toggle-table" type="button" data-table-for="pipe" aria-expanded="false">Table</button>
-      </div>
-      <div class="chart" id="chart-pipe"></div>
-      <div class="legend" id="legend-pipe" role="group" aria-label="Channels — toggle to emphasise"></div>
-      <div class="table-wrap" id="table-pipe" hidden></div>
-    </section>
+      <section class="card card--half" aria-labelledby="h-funnel">
+        <div class="card-head">
+          <h2 id="h-funnel">Funnel</h2>
+          <button class="toggle-table" type="button" data-table-for="funnel" aria-expanded="false">Table</button>
+        </div>
+        <div class="chart" id="chart-funnel"></div>
+        <div class="table-wrap" id="table-funnel" hidden></div>
+      </section>
 
-    <section class="card card--half" aria-labelledby="h-funnel">
-      <div class="card-head">
-        <h2 id="h-funnel">Funnel</h2>
-        <button class="toggle-table" type="button" data-table-for="funnel" aria-expanded="false">Table</button>
-      </div>
-      <div class="chart" id="chart-funnel"></div>
-      <div class="table-wrap" id="table-funnel" hidden></div>
-    </section>
+      <section class="card card--half" aria-labelledby="h-cpa">
+        <div class="card-head">
+          <h2 id="h-cpa">Cost per MQL by channel</h2>
+          <span class="hint" id="cpa-hint"></span>
+          <button class="toggle-table" type="button" data-table-for="cpa" aria-expanded="false">Table</button>
+        </div>
+        <div class="chart" id="chart-cpa"></div>
+        <div class="table-wrap" id="table-cpa" hidden></div>
+      </section>
 
-    <section class="card card--half" aria-labelledby="h-cpa">
-      <div class="card-head">
-        <h2 id="h-cpa">Cost per MQL by channel</h2>
-        <button class="toggle-table" type="button" data-table-for="cpa" aria-expanded="false">Table</button>
-      </div>
-      <div class="chart" id="chart-cpa"></div>
-      <div class="table-wrap" id="table-cpa" hidden></div>
-    </section>
+      <section class="card" aria-labelledby="h-score">
+        <div class="card-head">
+          <h2 id="h-score">Channel scorecard</h2>
+          <span class="hint">Status = ROAS against target</span>
+        </div>
+        <div class="table-wrap" id="table-score"></div>
+      </section>
 
-    <section class="card" aria-labelledby="h-score">
-      <div class="card-head">
-        <h2 id="h-score">Channel scorecard</h2>
-        <span class="hint">Status = performance against target</span>
-      </div>
-      <div class="table-wrap" id="table-score"></div>
-    </section>
+    </div>
 
+    <p class="footnote" id="footnote">—</p>
   </main>
 
-  <p class="footnote" id="footnote">—</p>
 </div>
 
 <script src="assets/data.js"></script>
