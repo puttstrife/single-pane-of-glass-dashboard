@@ -52,6 +52,7 @@
 *, *::before, *::after { box-sizing: border-box; }
 html, body { margin: 0; }
 body {
+  color-scheme: light;
   background: var(--plane);
   color: var(--navy);
   font-family: var(--font);
@@ -108,6 +109,22 @@ h1, h2, h3, p { margin: 0; }
 .status-dot[data-status="warning"]  { background: var(--warning); }
 .status-dot[data-status="critical"] { background: var(--critical); }
 .sidebar-foot { margin-top: var(--sp-5); font-size: 11px; color: var(--muted); }
+
+/* Nested page rows — the source's expanding sub-page pattern, kept */
+.nav button.nav-sub {
+  margin-left: var(--sp-4); padding-left: var(--sp-2);
+  border-left: 1px solid var(--border); border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  font-size: 13px; min-height: 34px;
+}
+.nav button.nav-sub[aria-current="true"] { border-left-color: var(--brand); }
+.page-kind {
+  width: 8px; height: 8px; border-radius: 2px; flex: none; margin-top: 6px;
+  background: var(--muted);
+}
+.page-kind[data-kind="landing"] { background: var(--ord-2); }
+.page-kind[data-kind="main"]    { background: var(--brand); }
+.page-kind[data-kind="chat"]    { background: var(--ord-4); }
+.series-key .page-kind { margin-top: 0; }
 
 .main { flex: 1; min-width: 0; padding: var(--sp-7) var(--sp-8) 56px; }
 
@@ -254,7 +271,22 @@ h1, h2, h3, p { margin: 0; }
 }
 
 /* ── Tables — the source's uppercase-head treatment ───────── */
-.table-wrap { overflow-x: auto; margin-top: var(--sp-3); }
+/* Scrollbars take their colour from the element's own colour-scheme, and a host
+   page that declares itself dark would paint this scroller dark on a white card.
+   Pin the scheme and the colours here so the bar matches the table either way. */
+.table-wrap {
+  overflow-x: auto; margin-top: var(--sp-3);
+  color-scheme: light;
+  scrollbar-width: thin;
+  scrollbar-color: var(--muted) var(--border);
+}
+.table-wrap::-webkit-scrollbar { height: 10px; }
+.table-wrap::-webkit-scrollbar-track { background: var(--border); border-radius: 999px; }
+.table-wrap::-webkit-scrollbar-thumb {
+  background: var(--muted); border-radius: 999px;
+  border: 2px solid var(--border);
+}
+.table-wrap::-webkit-scrollbar-thumb:hover { background: var(--navy); }
 table { border-collapse: collapse; width: 100%; font-size: 14px; }
 caption { text-align: left; color: var(--muted); font-size: 13px; padding-bottom: var(--sp-3); }
 th, td { padding: 14px var(--sp-2); text-align: right; white-space: nowrap; border-bottom: 1px solid var(--border); }
@@ -272,6 +304,13 @@ td { font-variant-numeric: tabular-nums; }
 .series-key { display: inline-flex; align-items: center; gap: 7px; }
 .series-key .swatch { width: 8px; height: 8px; border-radius: 2px; flex: none; }
 [hidden] { display: none !important; }
+
+.link-cell {
+  font: inherit; font-weight: 700; color: var(--navy);
+  background: none; border: 0; padding: 0; cursor: pointer;
+  text-align: left; border-bottom: 1px solid transparent;
+}
+.link-cell:hover { color: var(--brand); border-bottom-color: currentColor; }
 
 .footnote { margin-top: var(--sp-6); font-size: 13px; color: var(--muted); }
 .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; }
@@ -316,7 +355,8 @@ tr[data-selected="false"] { opacity: 0.42; }
 .metric[data-status="warning"]  { color: var(--navy); font-weight: 700; }
 .metric[data-status="critical"] { color: var(--critical); font-weight: 700; }
 
-.bar-cell { width: 34%; min-width: 120px; }
+.bar-cell { width: 22%; min-width: 132px; }
+.bar-value { display: block; margin-bottom: 5px; font-variant-numeric: tabular-nums; }
 .bar-track { display: block; height: 8px; border-radius: 999px; background: var(--border); overflow: hidden; }
 .bar-fill { display: block; height: 100%; border-radius: 999px; background: var(--brand); }
 

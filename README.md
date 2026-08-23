@@ -28,12 +28,18 @@ Then open http://localhost:4321.
 | Revenue by day | Daily revenue per site over the range |
 | Page load by day | Daily median load per site against the target line |
 | Funnel | Where users drop out — whole site, or the chat surface for sites that have one |
+| Page versions | Every landing / main / chat version side by side: sessions, conversion, revenue per session, bounce, load |
 | Traffic mix | Which sources bring the sessions |
 | Website scorecard | Every site, every headline metric, one table |
 | Engagement | Email, chat and retention per site |
 
-The sidebar picks the site and the pill picks the range (7 / 30 / 90 days). Both
-scope every block at once — no per-card filters.
+The sidebar picks the site — and expands into that site's pages, so you can scope
+the whole pane to a single landing version or chat entry. The pill picks the range
+(7 / 30 / 90 days). Both scope every block at once — no per-card filters.
+
+Ask Sabrina runs five landing versions plus its main site and two chat entries;
+Astrolover Sketch runs two landing versions, its main site and two Sketch Chat
+entries; Votive Society is a single surface, so it gets no comparison card.
 
 ## Relationship to the source design
 
@@ -58,7 +64,8 @@ all preserved as the anchor values for the data.
 | A hardcoded "Insights" list | Alerts computed from thresholds and period deltas, sorted worst-first and capped at six. |
 | Trend shown as a red or green arrow | Status as icon + label + colour, so it survives colourblindness and greyscale. |
 | Hover-only tooltips on `div`s | Buttons with `aria-label`s, keyboard focus showing the same as hover, and a table view behind every chart. |
-| Five sub-pages per site listed in the sidebar, with no data behind them | Dropped. What is real is the chat surface, which has its own funnel — so sites with chat get a Whole site / Chat toggle instead. Per-page data needs a per-page feed. |
+| Five sub-pages per site listed in the sidebar, with no data behind them | Pages are the grain the data is generated at. Every metric exists per page, the sidebar expands into them, and selecting one scopes the entire pane — including its own funnel for chat entries. |
+| No way to compare landing versions | A Page versions card ranks every version on conversion, with revenue-per-session, bounce and load beside it, and states the gap in money. Comparisons are like-for-like: landing against landing, chat against chat. |
 | Top-buyer names with email addresses | Dropped from the view. A monitoring pane does not need customer contact details on screen. |
 
 **One inconsistency in the source, carried nowhere:** its `conv` figures only
@@ -77,20 +84,38 @@ window.DASHBOARD_DATA = {
   thresholds: { uptime, loadMs, errorRate, failedApi, bounce },  // { good, warning }
   ranges:     [{ id, label, days }],
   dates:      ['2026-05-26', …],                                  // ascending
-  sites:      [{ id, name, domain, slot, aov, retention, hasChat, chatLabel,
-                 chat, subPages, funnel, chatFunnel, sources, email }],
-  daily:      [{ date, site, sessions, users, newUsers, returningUsers, orders,
-                 revenue, adSpend, loadMs, bounce, errorRate, failedApi,
-                 jsErrors, rageClicks, uptime, incident }],
+  sites:      [{ id, name, domain, slot, aov, retention, hasChat, chatLabel, chat,
+                 pages: [{ id, name, kind, share }],   // kind: landing | main | chat
+                 funnel, chatFunnel, sources, email }],
+  daily:      [{ date, site, page, sessions, users, newUsers, returningUsers,
+                 orders, revenue, adSpend, bounce, loadMs, errorRate, failedApi,
+                 jsErrors, rageClicks, incident }],
+  siteDaily:  [{ date, site, uptime }],
 };
+```
+
+`daily` is **per page per day**; site figures are summed from it, so the scorecard
+and the Page versions card can never disagree. Rates (load, bounce, error, failed
+API) roll up session-weighted, not as a flat average, so a low-traffic version
+cannot drag the site number. Uptime lives in `siteDaily` because it is an
+infrastructure fact about the host, not about one page.
+
+```text
 ```
 
 `slot` picks the site's chart colour (1–3). Thresholds drive every status pill and
 alert, so tune them per your SLOs before trusting the colours.
 
 The bundled data comes from `node scripts/generate-data.mjs` — seeded, so
-regenerating produces no diff. It is fabricated. Replace it before showing anyone
-numbers that are meant to be real.
+regenerating produces no diff. It is fabricated: the site-level anchors are the
+source canvas's own figures, but the split across page versions, the per-version
+conversion differences, and the two incidents are invented to give the pane
+something to detect. Replace it before showing anyone numbers meant to be real.
+
+Two seeded incidents drive the banner and the load chart: a four-day chat-bundle
+regression on Ask Sabrina's chat entries (resolved), and a Sketch canvas asset
+regression on Astrolover Sketch's chat entries that starts on day 48 and never
+recovers. Delete them from `scripts/generate-data.mjs` for a clean baseline.
 
 ## Design notes
 
@@ -110,6 +135,12 @@ numbers that are meant to be real.
   first stage dwarfs the last, and a shared scale leaves the tail invisible.
 - **Colour follows the site, not its rank.** Filtering dims the others rather than
   recolouring the survivors.
+- **Eight pages are never eight lines.** Only the all-sites view is multi-series,
+  because three hues are what passed validation. Page comparison is bars in a
+  sorted table, which is the right form for many nominal categories anyway.
+- **Scrollbars are pinned to the light scheme.** A wide table's scrollbar inherits
+  the host page's colour-scheme, which paints a dark bar across a white card in a
+  dark-themed host; `color-scheme` and `scrollbar-color` are set on the scroller.
 - Thin marks, hairline gridlines, and direct labels used sparingly — line ends and
   the funnel bar ends — rather than a number on every point.
 

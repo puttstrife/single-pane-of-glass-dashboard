@@ -47,6 +47,7 @@
   var state = {
     range: '30d',
     site: 'all',
+    page: null,        // a page id within the selected site, or null for the whole site
     surface: 'site',   // 'site' | 'chat' — which funnel is shown
     emphasis: null
   };
@@ -64,14 +65,33 @@
   function activeSites() {
     return state.site === 'all' ? D.sites : D.sites.filter(function (s) { return s.id === state.site; });
   }
-  function rows(dates, siteId) {
+  function rows(dates, siteId, pageId) {
     var set = {}; dates.forEach(function (d) { set[d] = 1; });
     return D.daily.filter(function (r) {
-      return set[r.date] && (!siteId || siteId === 'all' || r.site === siteId);
+      return set[r.date]
+        && (!siteId || siteId === 'all' || r.site === siteId)
+        && (!pageId || r.page === pageId);
     });
   }
+  /* Uptime is an infrastructure fact about the site, not about one page. */
+  function uptimeOf(dates, siteId) {
+    var set = {}; dates.forEach(function (d) { set[d] = 1; });
+    var list = D.siteDaily.filter(function (r) {
+      return set[r.date] && (!siteId || siteId === 'all' || r.site === siteId);
+    });
+    return list.length ? mean(list, 'uptime') : 1;
+  }
+  function pageOf(s, id) {
+    return s && s.pages.find(function (p) { return p.id === id; });
+  }
+  function scopeRows(dates) { return rows(dates, state.site, state.page); }
   function sum(list, key) { return list.reduce(function (a, r) { return a + r[key]; }, 0); }
   function mean(list, key) { return list.length ? sum(list, key) / list.length : 0; }
+  function weighted(list, key) {
+    var w = sum(list, 'sessions');
+    if (!w) return mean(list, key);
+    return list.reduce(function (a, r) { return a + r[key] * r.sessions; }, 0) / w;
+  }
 
   function kpis(list) {
     var sessions = sum(list, 'sessions'), users = sum(list, 'users');
@@ -86,9 +106,9 @@
       roas: sum(list, 'adSpend') ? revenue / sum(list, 'adSpend') : 0,
       cac: orders ? sum(list, 'adSpend') / orders : 0,
       // Rates and timings are averaged, never summed.
-      loadMs: mean(list, 'loadMs'), bounce: mean(list, 'bounce'),
-      errorRate: mean(list, 'errorRate'), failedApi: mean(list, 'failedApi'),
-      uptime: mean(list, 'uptime'),
+      // Session-weighted, so a low-traffic page can't drag the site average.
+      loadMs: weighted(list, 'loadMs'), bounce: weighted(list, 'bounce'),
+      errorRate: weighted(list, 'errorRate'), failedApi: weighted(list, 'failedApi'),
       jsErrors: sum(list, 'jsErrors'), rageClicks: sum(list, 'rageClicks')
     };
   }
@@ -110,9 +130,11 @@
     critical: { glyph: '■', label: 'Degraded' }
   };
   var STATUS_RANK = { good: 0, warning: 1, critical: 2 };
+  var KIND_LABEL = { landing: 'Landing', main: 'Main site', chat: 'Chat' };
 
-  function siteStatus(list) {
+  function siteStatus(list, uptime) {
     var k = kpis(list);
+    k.uptime = uptime;
     var worst = 'good';
     ['uptime', 'loadMs', 'errorRate', 'failedApi'].forEach(function (m) {
       var s = statusOf(m, k[m]);
@@ -254,10 +276,12 @@
     host.appendChild(allBtn);
 
     D.sites.forEach(function (s) {
-      var status = siteStatus(rows(dates, s.id));
-      var btn = el('button', {
-        type: 'button', 'aria-current': String(state.site === s.id),
-        onclick: function () { select(s.id); }
+      var status = siteStatus(rows(dates, s.id), uptimeOf(dates, s.id));
+      var open = state.site === s.id;
+      host.appendChild(el('button', {
+        type: 'button', 'aria-current': String(open && !state.page),
+        'aria-expanded': s.pages.length > 1 ? String(open) : null,
+        onclick: function () { select(s.id, null); }
       }, [
         el('span', { class: 'status-dot', 'data-status': status, 'aria-hidden': 'true' }),
         el('span', { class: 'nav-name' }, [
@@ -265,20 +289,48 @@
           el('span', { class: 'nav-domain', text: s.domain })
         ]),
         el('span', { class: 'nav-meta', text: STATUS_META[status].label })
-      ]);
-      host.appendChild(btn);
+      ]));
+
+      // Pages only expand for the site you are looking at, and only where there
+      // is more than one — a lone "Main web" row is noise.
+      if (!open || s.pages.length < 2) return;
+      s.pages.forEach(function (p) {
+        var list = rows(dates, s.id, p.id);
+        var k = kpis(list);
+        host.appendChild(el('button', {
+          type: 'button', class: 'nav-sub', 'aria-current': String(state.page === p.id),
+          onclick: function () { select(s.id, p.id); }
+        }, [
+          el('span', { class: 'page-kind', 'data-kind': p.kind, 'aria-hidden': 'true' }),
+          el('span', { class: 'nav-name' }, [
+            el('span', { text: p.name }),
+            el('span', { class: 'nav-domain', text: pct(k.conversion, 2) + ' conversion' })
+          ]),
+          el('span', { class: 'nav-meta', text: compact(k.sessions) })
+        ]));
+      });
     });
 
     document.getElementById('sidebar-foot').textContent =
       'Monitoring ' + D.sites.length + ' sites · ' + D.meta.days + ' days of history';
   }
-  function select(id) {
-    if (state.site === id) return;
+  function select(id, pageId) {
+    if (state.site === id && state.page === (pageId || null)) return;
     state.site = id;
+    state.page = pageId || null;
     state.emphasis = null;
     var s = site(id);
+    var p = pageOf(s, state.page);
+    // A chat page has only one funnel worth showing; anything else defaults back.
+    state.surface = p && p.kind === 'chat' ? 'chat' : 'site';
     if (!s || !s.hasChat) state.surface = 'site';
     renderAll();
+  }
+  function scopeLabel() {
+    var s = site(state.site);
+    if (!s) return 'all websites';
+    var p = pageOf(s, state.page);
+    return p ? s.name + ' · ' + p.name : s.name;
   }
 
   /* ── range control ────────────────────────────────────────── */
@@ -300,7 +352,7 @@
     clear(host);
     var dates = datesInScope();
     var open = {};
-    rows(dates, state.site).forEach(function (r) {
+    scopeRows(dates).forEach(function (r) {
       if (r.incident) {
         if (!open[r.site + '|' + r.incident]) open[r.site + '|' + r.incident] = { site: r.site, label: r.incident, days: [] };
         open[r.site + '|' + r.incident].days.push(r.date);
@@ -326,12 +378,11 @@
   /* ── hero + tiles ─────────────────────────────────────────── */
   function renderHero() {
     var dates = datesInScope();
-    var curr = kpis(rows(dates, state.site));
-    var past = kpis(rows(priorDates(), state.site));
+    var curr = kpis(scopeRows(dates));
+    var past = kpis(scopeRows(priorDates()));
 
     document.getElementById('hero-scope').textContent =
-      'Last ' + rangeDef().days + ' days' +
-      (state.site === 'all' ? ' · all websites' : ' · ' + siteName(state.site));
+      'Last ' + rangeDef().days + ' days · ' + scopeLabel();
     document.getElementById('hero-value').textContent = money(curr.revenue);
 
     var foot = document.getElementById('hero-delta');
@@ -345,7 +396,7 @@
     var spark = document.getElementById('hero-spark');
     clear(spark);
     spark.appendChild(sparkline(dates.map(function (d) {
-      return sum(rows([d], state.site), 'revenue');
+      return sum(scopeRows([d]), 'revenue');
     }), 320, 56));
   }
 
@@ -353,9 +404,9 @@
     var host = document.getElementById('tiles');
     clear(host);
     var dates = datesInScope();
-    var curr = kpis(rows(dates, state.site));
-    var past = kpis(rows(priorDates(), state.site));
-    var trend = function (fn) { return dates.map(function (d) { return fn(kpis(rows([d], state.site))); }); };
+    var curr = kpis(scopeRows(dates));
+    var past = kpis(scopeRows(priorDates()));
+    var trend = function (fn) { return dates.map(function (d) { return fn(kpis(scopeRows([d]))); }); };
 
     [
       { label: 'Sessions', value: count(curr.sessions), curr: curr.sessions, prev: past.sessions,
@@ -388,16 +439,30 @@
     var host = document.getElementById('table-health');
     clear(host);
     var dates = datesInScope();
+    var s = site(state.site);
+    // Drilled into a site with variants, the health table becomes its pages —
+    // that is where a regression actually lives.
+    var byPage = !!(s && s.pages.length > 1);
 
     var body = el('tbody');
-    D.sites.forEach(function (s) {
-      var list = rows(dates, s.id);
-      var k = kpis(list);
-      var status = siteStatus(list);
-      var tr = el('tr', { 'data-selected': String(state.site === 'all' || state.site === s.id) });
+    var entries = byPage
+      ? s.pages.map(function (p) {
+          return { key: p.id, label: p.name, sub: p.kind, list: rows(dates, s.id, p.id),
+                   uptime: uptimeOf(dates, s.id), selected: !state.page || state.page === p.id };
+        })
+      : D.sites.map(function (x) {
+          return { key: x.id, label: x.name, sub: x.domain, slot: x.slot, list: rows(dates, x.id),
+                   uptime: uptimeOf(dates, x.id), selected: state.site === 'all' || state.site === x.id };
+        });
+
+    entries.forEach(function (e) {
+      var k = kpis(e.list);
+      k.uptime = e.uptime;
+      var tr = el('tr', { 'data-selected': String(e.selected) });
       var head = el('th', { scope: 'row' });
-      head.appendChild(siteKey(s));
-      head.appendChild(el('span', { class: 'row-sub', text: s.domain }));
+      if (e.slot) head.appendChild(el('span', { class: 'series-key' }, [swatch(siteColor(e.slot)), el('span', { text: e.label })]));
+      else head.appendChild(el('span', { text: e.label }));
+      head.appendChild(el('span', { class: 'row-sub', text: e.sub }));
       tr.appendChild(head);
 
       [['uptime', uptimePct(k.uptime)], ['loadMs', ms(k.loadMs)],
@@ -410,18 +475,20 @@
 
       tr.appendChild(el('td', { text: count(k.jsErrors) }));
       tr.appendChild(el('td', { text: count(k.rageClicks) }));
-      tr.appendChild(el('td', {}, [statusPill(status)]));
+      tr.appendChild(el('td', {}, [statusPill(siteStatus(e.list, e.uptime))]));
       body.appendChild(tr);
     });
 
     host.appendChild(tableOf(null,
-      [th('Website'), th('Uptime'), th('Median load'), th('Error rate'),
+      [th(byPage ? 'Page' : 'Website'), th('Uptime'), th('Median load'), th('Error rate'),
        th('Failed API'), th('JS errors'), th('Rage clicks'), th('Status')],
       body));
 
     document.getElementById('health-hint').textContent =
-      'Thresholds: uptime ' + uptimePct(D.thresholds.uptime.good) + ', load '
-      + ms(D.thresholds.loadMs.good) + ', errors ' + pct(D.thresholds.errorRate.good, 0);
+      (byPage ? 'Pages of ' + s.name + ' · uptime is site-level · ' : '')
+      + 'thresholds: uptime ' + uptimePct(D.thresholds.uptime.good)
+      + ', load ' + ms(D.thresholds.loadMs.good)
+      + ', errors ' + pct(D.thresholds.errorRate.good, 0);
   }
 
   /* ── computed alerts (replaces a hand-written insight list) ─ */
@@ -431,37 +498,61 @@
     var dates = datesInScope();
     var found = [];
 
+    // Scope: all sites → one entry per site; a site → one per page; a page → it.
+    var scopes = [];
     D.sites.forEach(function (s) {
       if (state.site !== 'all' && state.site !== s.id) return;
-      var list = rows(dates, s.id);
-      var k = kpis(list);
-      var past = kpis(rows(priorDates(), s.id));
+      if (state.site === 'all' || s.pages.length < 2) {
+        scopes.push({ label: s.name, site: s, list: rows(dates, s.id), prior: rows(priorDates(), s.id) });
+      } else {
+        s.pages.forEach(function (p) {
+          if (state.page && state.page !== p.id) return;
+          scopes.push({ label: s.name + ' · ' + p.name, site: s, page: p,
+            list: rows(dates, s.id, p.id), prior: rows(priorDates(), s.id, p.id) });
+        });
+      }
+    });
 
-      [['uptime', 'Uptime ' + uptimePct(k.uptime), 'warning'],
-       ['loadMs', 'Median load ' + ms(k.loadMs), 'warning'],
-       ['errorRate', 'Error rate ' + pct(k.errorRate, 2), 'warning'],
-       ['failedApi', 'Failed API calls ' + pct(k.failedApi, 2), 'warning'],
+    scopes.forEach(function (sc) {
+      var k = kpis(sc.list);
+      k.uptime = uptimeOf(dates, sc.site.id);
+      var past = kpis(sc.prior);
+
+      [['uptime', 'Uptime ' + uptimePct(k.uptime), 'warning', !sc.page],
+       ['loadMs', 'Median load ' + ms(k.loadMs), 'warning', true],
+       ['errorRate', 'Error rate ' + pct(k.errorRate, 2), 'warning', true],
+       ['failedApi', 'Failed API calls ' + pct(k.failedApi, 2), 'warning', true],
        // Bounce drifts over its target constantly; only a critical read is news.
-       ['bounce', 'Bounce rate ' + pct(k.bounce), 'critical']
+       ['bounce', 'Bounce rate ' + pct(k.bounce), 'critical', true]
       ].forEach(function (row) {
+        if (!row[3]) return;
         var st = statusOf(row[0], k[row[0]]);
         if (st === 'good') return;
         if (row[2] === 'critical' && st !== 'critical') return;
-        found.push({ status: st, site: s, text: row[1] + ' is outside the healthy band.' });
+        found.push({ status: st, label: sc.label, text: row[1] + ' is outside the healthy band.' });
       });
 
       if (past.revenue && (k.revenue - past.revenue) / past.revenue < -0.1) {
-        found.push({ status: 'critical', site: s,
+        found.push({ status: 'critical', label: sc.label,
           text: 'Revenue down ' + pct(Math.abs((k.revenue - past.revenue) / past.revenue))
                 + ' against the prior ' + rangeDef().days + ' days.' });
       }
+    });
 
-      var steps = funnelSteps(s, 'site');
-      var worst = steps.slice(1).reduce(function (a, b) { return b.stepLoss > a.stepLoss ? b : a; }, steps[1]);
-      if (worst && worst.stepLoss >= 0.35) {
-        found.push({ status: 'warning', site: s,
-          text: 'Funnel loses ' + pct(worst.stepLoss, 0) + ' of users at ' + worst.label + '.' });
-      }
+    // A variant that converts far below its siblings is a finding, not a metric.
+    D.sites.forEach(function (s) {
+      if (state.site !== 'all' && state.site !== s.id) return;
+      var landings = s.pages.filter(function (p) { return p.kind === 'landing'; });
+      if (landings.length < 2) return;
+      var scored = landings.map(function (p) {
+        return { page: p, conv: kpis(rows(dates, s.id, p.id)).conversion };
+      }).sort(function (a, b) { return b.conv - a.conv; });
+      var best = scored[0], worst = scored[scored.length - 1];
+      if (!best.conv || (best.conv - worst.conv) / best.conv < 0.2) return;
+      if (state.page && state.page !== worst.page.id) return;
+      found.push({ status: 'warning', label: s.name + ' · ' + worst.page.name,
+        text: 'Converts at ' + pct(worst.conv, 2) + ' against ' + pct(best.conv, 2)
+              + ' on ' + best.page.name + ' — ' + pct((best.conv - worst.conv) / best.conv, 0) + ' behind the best version.' });
     });
 
     found.sort(function (a, b) { return STATUS_RANK[b.status] - STATUS_RANK[a.status]; });
@@ -479,7 +570,7 @@
       host.appendChild(el('li', { class: 'alert', 'data-status': a.status }, [
         el('span', { class: 'glyph', 'aria-hidden': 'true', text: STATUS_META[a.status].glyph }),
         el('span', {}, [
-          el('strong', { text: a.site.name }),
+          el('strong', { text: a.label }),
           el('span', { text: ' — ' + a.text })
         ])
       ]));
@@ -498,19 +589,23 @@
     var tip = makeTooltip(host);
 
     var dates = datesInScope();
-    var sites = activeSites();
+    // Only the all-sites view is multi-series. Drilled into a site, comparing its
+    // eight pages as eight lines would need eight validated hues; the page
+    // comparison belongs in the Page versions card, as bars.
+    var sites = state.site === 'all' ? D.sites : [];
     var width = Math.max(300, host.clientWidth || 520);
     var m = { top: 16, right: 58, bottom: 28, left: 52 };
     var height = 260;
     var plotW = width - m.left - m.right;
     var plotH = height - m.top - m.bottom;
 
-    var series = sites.map(function (s) {
-      return {
-        site: s,
-        values: dates.map(function (d) { return opts.value(rows([d], s.id)); })
-      };
-    });
+    var series = sites.length
+      ? sites.map(function (s) {
+          return { site: s, name: s.name, slot: s.slot,
+            values: dates.map(function (d) { return opts.value(rows([d], s.id)); }) };
+        })
+      : [{ site: site(state.site), name: scopeLabel(), slot: site(state.site).slot,
+           values: dates.map(function (d) { return opts.value(scopeRows([d])); }) }];
 
     var all = series.reduce(function (a, s) { return a.concat(s.values); }, []);
     var max = Math.max.apply(null, all);
@@ -545,10 +640,10 @@
 
     series.forEach(function (s) {
       var d = s.values.map(function (v, i) { return (i ? 'L' : 'M') + x(i).toFixed(1) + ',' + y(v).toFixed(1); }).join('');
-      var path = svg('path', { d: d, fill: 'none', stroke: siteColor(s.site.slot), 'stroke-width': 2,
+      var path = svg('path', { d: d, fill: 'none', stroke: siteColor(s.slot), 'stroke-width': 2,
         'stroke-linejoin': 'round', 'stroke-linecap': 'round' });
       var dot = svg('circle', { cx: x(s.values.length - 1), cy: y(s.values[s.values.length - 1]), r: 4.5,
-        fill: siteColor(s.site.slot), stroke: token('--card'), 'stroke-width': 2 });
+        fill: siteColor(s.slot), stroke: token('--card'), 'stroke-width': 2 });
       if (state.emphasis && state.emphasis !== s.site.id) {
         path.setAttribute('data-dim', 'true'); dot.setAttribute('data-dim', 'true');
       }
@@ -567,7 +662,7 @@
       var hit = svg('rect', { class: 'hit', x: x(i) - band / 2, y: m.top, width: Math.max(band, 6), height: plotH,
         tabindex: i % Math.ceil(dates.length / 12) === 0 ? '0' : '-1', role: 'button',
         'aria-label': dayLong(date) + ': ' + series.map(function (s) {
-          return s.site.name + ' ' + opts.endFormat(s.values[i]);
+          return s.name + ' ' + opts.endFormat(s.values[i]);
         }).join(', ') });
       function show(ev) {
         crosshair.setAttribute('x1', x(i)); crosshair.setAttribute('x2', x(i));
@@ -575,7 +670,7 @@
         var box = host.getBoundingClientRect();
         var px = ev && ev.clientX ? ev.clientX - box.left : x(i);
         var lines = series.map(function (s) {
-          return { color: siteColor(s.site.slot), label: s.site.name, value: opts.endFormat(s.values[i]) };
+          return { color: siteColor(s.slot), label: s.name, value: opts.endFormat(s.values[i]) };
         });
         var total = opts.totalLabel
           ? { label: opts.totalLabel, value: opts.endFormat(series.reduce(function (a, s) { return a + s.values[i]; }, 0)) }
@@ -617,7 +712,7 @@
     clear(host);
     var head = [th('Date')].concat(series.map(function (s) {
       var cell = el('th', { scope: 'col' });
-      cell.appendChild(siteKey(s.site));
+      cell.appendChild(el('span', { class: 'series-key' }, [swatch(siteColor(s.slot)), el('span', { text: s.name })]));
       return cell;
     }));
     var body = el('tbody');
@@ -632,10 +727,12 @@
   }
 
   /* ── funnel ───────────────────────────────────────────────── */
-  function funnelSteps(s, surface) {
+  function funnelSteps(s, surface, pageId) {
     var defs = surface === 'chat' && s.chatFunnel.length ? s.chatFunnel : s.funnel;
-    var list = rows(datesInScope(), s.id);
-    var base = sum(list, 'sessions') * (surface === 'chat' && s.chat ? s.chat.sessionsShare : 1);
+    var list = rows(datesInScope(), s.id, pageId);
+    // With a page selected the base is that page's own sessions; without one, the
+    // chat funnel starts from the share of sessions that reach chat.
+    var base = sum(list, 'sessions') * (!pageId && surface === 'chat' && s.chat ? s.chat.sessionsShare : 1);
     return defs.map(function (d, i) {
       var value = base * (1 - d.cumulativeLoss);
       var prev = i ? base * (1 - defs[i - 1].cumulativeLoss) : null;
@@ -669,7 +766,7 @@
 
     // Across all sites, the funnel is the session-weighted blend.
     var sites = activeSites();
-    var perSite = sites.map(function (s) { return funnelSteps(s, state.surface); });
+    var perSite = sites.map(function (s) { return funnelSteps(s, state.surface, state.page); });
     var steps = perSite[0].map(function (_, i) {
       var value = perSite.reduce(function (a, f) { return a + f[i].value; }, 0);
       return { label: perSite[0][i].label, value: value };
@@ -756,6 +853,110 @@
       [th('Stage'), th('Users'), th('Step rate'), th('Of ' + steps[0].label)], body));
   }
 
+  /* ── page versions — the A/B comparison the source only hinted at ── */
+  function renderPages() {
+    var card = document.getElementById('card-pages');
+    var host = document.getElementById('table-pages');
+    var hint = document.getElementById('pages-hint');
+    var callout = document.getElementById('pages-callout');
+    clear(host);
+    callout.textContent = '';
+
+    var dates = datesInScope();
+    // Which sites contribute rows: the selected one, or every site with variants.
+    var sites = (state.site === 'all' ? D.sites : [site(state.site)])
+      .filter(function (s) { return s && s.pages.length > 1; });
+    if (!sites.length) { card.hidden = true; return; }
+    card.hidden = false;
+
+    var list = [];
+    sites.forEach(function (s) {
+      s.pages.forEach(function (p) {
+        var k = kpis(rows(dates, s.id, p.id));
+        list.push({ site: s, page: p, k: k,
+          revPerSession: k.sessions ? k.revenue / k.sessions : 0 });
+      });
+    });
+    list.sort(function (a, b) { return b.k.conversion - a.k.conversion; });
+
+    var maxConv = list[0] ? list[0].k.conversion : 1;
+
+    var body = el('tbody');
+    list.forEach(function (r) {
+      var selected = !state.page || state.page === r.page.id;
+      var tr = el('tr', { 'data-selected': String(selected) });
+
+      var head = el('th', { scope: 'row' });
+      var nameBtn = el('button', {
+        class: 'link-cell', type: 'button', text: r.page.name,
+        onclick: function () { select(r.site.id, r.page.id); }
+      });
+      head.appendChild(el('span', { class: 'series-key' }, [
+        el('span', { class: 'page-kind', 'data-kind': r.page.kind, 'aria-hidden': 'true' }), nameBtn
+      ]));
+      if (state.site === 'all') head.appendChild(el('span', { class: 'row-sub', text: r.site.name }));
+      tr.appendChild(head);
+
+      tr.appendChild(el('td', { text: KIND_LABEL[r.page.kind] || r.page.kind }));
+      tr.appendChild(el('td', { text: count(r.k.sessions) }));
+      tr.appendChild(el('td', { text: pct(r.page.share, 1) }));
+
+      // Conversion carries a bar as well as a number: this card exists to be
+      // scanned for the outlier, and length reads faster than digits.
+      var convCell = el('td', { class: 'bar-cell' });
+      convCell.appendChild(el('span', { class: 'bar-value', text: pct(r.k.conversion, 2) }));
+      var track = el('span', { class: 'bar-track' });
+      var fill = el('span', { class: 'bar-fill' });
+      fill.style.width = (r.k.conversion / maxConv * 100).toFixed(1) + '%';
+      track.appendChild(fill);
+      convCell.appendChild(track);
+      tr.appendChild(convCell);
+
+      tr.appendChild(el('td', { text: count(r.k.orders) }));
+      tr.appendChild(el('td', { text: money2(r.revPerSession) }));
+      tr.appendChild(el('td', { text: pct(r.k.bounce) }));
+      var loadCell = el('td');
+      loadCell.appendChild(el('span', { class: 'metric', 'data-status': statusOf('loadMs', r.k.loadMs), text: ms(r.k.loadMs) }));
+      tr.appendChild(loadCell);
+      body.appendChild(tr);
+    });
+
+    host.appendChild(tableOf(null,
+      [th('Page'), th('Type'), th('Sessions'), th('Traffic share'), th('Conversion'),
+       th('Orders'), th('Rev / session'), th('Bounce'), th('Median load')],
+      body));
+
+    hint.textContent = sites.length === 1
+      ? sites[0].pages.length + ' versions of ' + sites[0].name
+      : list.length + ' versions across ' + sites.length + ' sites';
+
+    // Compare like with like: a chat entry and a landing page are different jobs,
+    // so the headline gap is drawn from the page type with the widest spread.
+    var groups = {};
+    list.forEach(function (r) { (groups[r.page.kind] = groups[r.page.kind] || []).push(r); });
+    var pick = null;
+    Object.keys(groups).forEach(function (kind) {
+      var g = groups[kind];
+      if (g.length < 2) return;
+      var best = g[0], worst = g[g.length - 1];
+      if (!best.k.conversion) return;
+      var gap = (best.k.conversion - worst.k.conversion) / best.k.conversion;
+      if (!pick || gap > pick.gap) pick = { kind: kind, best: best, worst: worst, gap: gap };
+    });
+
+    if (pick) {
+      var site_ = function (r) { return state.site === 'all' ? ' (' + r.site.name + ')' : ''; };
+      callout.textContent =
+        'Among ' + (KIND_LABEL[pick.kind] || pick.kind).toLowerCase() + ' pages: '
+        + pick.best.page.name + site_(pick.best) + ' converts best at ' + pct(pick.best.k.conversion, 2) + '. '
+        + pick.worst.page.name + site_(pick.worst) + ' is ' + pct(pick.gap, 0)
+        + ' behind at ' + pct(pick.worst.k.conversion, 2)
+        + ', on ' + count(pick.worst.k.sessions) + ' sessions — worth '
+        + moneyExact(pick.worst.k.sessions * (pick.best.revPerSession - pick.worst.revPerSession))
+        + ' if it matched the best version.';
+    }
+  }
+
   /* ── traffic mix ──────────────────────────────────────────── */
   function renderMix() {
     var host = document.getElementById('table-mix');
@@ -790,7 +991,9 @@
         barCell
       ]));
     });
-    host.appendChild(tableOf(null, [th('Source'), th('Sessions'), th('Share'), th('')], body));
+    host.appendChild(tableOf(
+      state.page ? 'Source split is recorded per site, so this is ' + siteName(state.site) + ' as a whole.' : null,
+      [th('Source'), th('Sessions'), th('Share'), th('')], body));
   }
 
   /* ── scorecard ────────────────────────────────────────────── */
@@ -901,6 +1104,7 @@
     });
 
     renderFunnel();
+    renderPages();
     renderMix();
     renderScorecard();
     renderEngagement();

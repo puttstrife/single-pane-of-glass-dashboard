@@ -46,7 +46,11 @@ const SITES = [
     email: { sent: 38000, open: 0.27, click: 0.031, unsub: 0.004,
       campaigns: [['New arrivals', 0.30], ['Restock alert', 0.24]],
       topBuyers: [['Marta Lindqvist', 1240], ['Devon Achebe', 980], ['Priya Nair', 860], ['Sam Okafor', 790], ['Iris Bergman', 705]] },
-    retention: 0.29, hasChat: false, subPages: ['Landing 1', 'Landing 2', 'Main web'],
+    retention: 0.29, hasChat: false,
+    // No variants in the source for this site — one surface, so no A/B card.
+    pages: [
+      { id: 'main', name: 'Main web', kind: 'main', share: 1, conv: 1, bounce: 0, load: 1 },
+    ],
     incidents: [],
   },
   {
@@ -62,9 +66,20 @@ const SITES = [
       topBuyers: [['Yuki Tanaka', 610], ['Carla Mendes', 540], ['Theo Nilsen', 495], ['Zara Hassan', 460], ['Léa Dupont', 410]] },
     retention: 0.22, hasChat: true, chatLabel: 'Chat',
     chat: { sessionsShare: 0.395, msgsPerSession: 7.4, avgSeconds: 260 },
-    subPages: ['Landing 1', 'Landing 2', 'Main web', 'Chat 1', 'Chat 2'],
-    // Chat bundle regression: slow loads and failed calls for four days.
-    incidents: [{ from: 62, to: 66, loadMult: 1.9, failedApiMult: 3.4, uptimeDrop: 0.004, label: 'Chat bundle regression' }],
+    // Five landing versions in rotation, plus the main site and two chat entries.
+    pages: [
+      { id: 'landing-v1', name: 'Landing v1', kind: 'landing', share: 0.110, conv: 1.00, bounce: 0.00, load: 1.00 },
+      { id: 'landing-v2', name: 'Landing v2', kind: 'landing', share: 0.100, conv: 1.22, bounce: -0.05, load: 0.95 },
+      { id: 'landing-v3', name: 'Landing v3', kind: 'landing', share: 0.090, conv: 0.78, bounce: 0.07, load: 1.15 },
+      { id: 'landing-v4', name: 'Landing v4', kind: 'landing', share: 0.070, conv: 0.91, bounce: 0.02, load: 1.05 },
+      { id: 'landing-v5', name: 'Landing v5', kind: 'landing', share: 0.050, conv: 1.09, bounce: -0.02, load: 0.98 },
+      { id: 'main', name: 'Main web', kind: 'main', share: 0.185, conv: 1.05, bounce: -0.03, load: 1.00 },
+      { id: 'chat-1', name: 'Chat 1', kind: 'chat', share: 0.220, conv: 1.15, bounce: -0.06, load: 1.25 },
+      { id: 'chat-2', name: 'Chat 2', kind: 'chat', share: 0.175, conv: 0.95, bounce: 0.01, load: 1.30 },
+    ],
+    // Chat bundle regression: slow loads and failed calls for four days, on the
+    // chat entries only — which is why it is worth having page-level rows.
+    incidents: [{ from: 62, to: 66, pages: ['chat-1', 'chat-2'], loadMult: 1.9, failedApiMult: 3.4, uptimeDrop: 0.004, label: 'Chat bundle regression' }],
   },
   {
     id: 'astro', name: 'Astrolover Sketch', domain: 'astroloversketch.com', slot: 3,
@@ -79,45 +94,76 @@ const SITES = [
       topBuyers: [['Noah Kessler', 385], ['Amara Diallo', 340], ['Felix Storm', 298], ['Ingrid Solberg', 275], ['Ravi Deshmukh', 240]] },
     retention: 0.26, hasChat: true, chatLabel: 'Sketch Chat',
     chat: { sessionsShare: 0.353, msgsPerSession: 5.2, avgSeconds: 185 },
-    subPages: ['Landing 1', 'Landing 2', 'Main web', 'Chat 1', 'Chat 2'],
-    // Sketch canvas ships a heavier asset; load time steps up and never recovers.
-    incidents: [{ from: 48, to: 89, loadMult: 1.35, failedApiMult: 1.4, uptimeDrop: 0.0006, label: 'Sketch canvas asset regression' }],
+    pages: [
+      { id: 'landing-1', name: 'Landing 1', kind: 'landing', share: 0.210, conv: 0.94, bounce: 0.03, load: 1.05 },
+      { id: 'landing-2', name: 'Landing 2', kind: 'landing', share: 0.170, conv: 1.12, bounce: -0.04, load: 0.97 },
+      { id: 'main', name: 'Main web', kind: 'main', share: 0.267, conv: 1.02, bounce: 0.00, load: 1.00 },
+      { id: 'chat-1', name: 'Sketch Chat 1', kind: 'chat', share: 0.200, conv: 1.08, bounce: -0.02, load: 1.40 },
+      { id: 'chat-2', name: 'Sketch Chat 2', kind: 'chat', share: 0.153, conv: 0.86, bounce: 0.05, load: 1.45 },
+    ],
+    // Sketch canvas ships a heavier asset; load steps up on the chat surfaces and
+    // never recovers.
+    incidents: [{ from: 48, to: 89, pages: ['chat-1', 'chat-2'], loadMult: 1.35, failedApiMult: 1.4, uptimeDrop: 0.0006, label: 'Sketch canvas asset regression' }],
   },
 ];
 
+/* Rows are generated per PAGE, then summed to the site. Doing it the other way
+   round lets the two disagree; this way the scorecard and the page-versions card
+   are always the same numbers read at two grains. Uptime stays site-level — it is
+   an infrastructure fact, not a per-page one. */
 const daily = [];
+const siteDaily = [];
+
 SITES.forEach((s) => {
+  // Conversion multipliers are relative, so normalise them by session share:
+  // the blended site conversion has to stay on the source's anchor.
+  const convNorm = s.pages.reduce((a, p) => a + p.share * p.conv, 0);
+
   dates.forEach((date, i) => {
     const dow = new Date(date + 'T00:00:00Z').getUTCDay();
-    const season = WEEKDAY[dow];
-    // Trend runs forward across the window, so the recent period reads as growth.
-    const growth = Math.pow(1 + s.trend, i - DAYS + 1);
-    const shape = season * growth;
-
+    const shape = WEEKDAY[dow] * Math.pow(1 + s.trend, i - DAYS + 1);
     const incident = s.incidents.find((inc) => i >= inc.from && i <= inc.to);
 
-    const sessions = Math.round((s.week.sessions / 7) * shape * jitter(0.10));
-    const users = Math.round((s.week.users / 7) * shape * jitter(0.09));
-    const newUsers = Math.round((s.week.newUsers / 7) * shape * jitter(0.11));
-    const returningUsers = Math.max(0, users - newUsers);
-    // A slow, erroring day converts worse — that is the point of watching it.
-    const conversionDrag = incident ? 0.86 : 1;
-    const orders = Math.max(0, Math.round((s.week.orders / 7) * shape * conversionDrag * jitter(0.14)));
-    const revenue = Math.round(orders * s.aov * jitter(0.05));
-    const adSpend = Math.round((s.week.adSpend / 7) * shape * jitter(0.08));
+    const siteSessions = (s.week.sessions / 7) * shape * jitter(0.10);
+    const siteUsers = (s.week.users / 7) * shape * jitter(0.09);
+    const siteNewUsers = (s.week.newUsers / 7) * shape * jitter(0.11);
+    const siteOrders = (s.week.orders / 7) * shape * jitter(0.14);
+    const siteAdSpend = Math.round((s.week.adSpend / 7) * shape * jitter(0.08));
 
-    const loadMs = Math.round(s.ux.loadMs * (incident ? incident.loadMult : 1) * jitter(0.12));
-    const bounce = +(s.ux.bounce * (incident ? 1.09 : 1) * jitter(0.07)).toFixed(4);
-    const errorRate = +(s.ux.errorRate * (incident ? 1.8 : 1) * jitter(0.22)).toFixed(5);
-    const failedApi = +(s.ux.failedApi * (incident ? incident.failedApiMult : 1) * jitter(0.25)).toFixed(5);
-    const jsErrors = Math.round((s.ux.jsErrors / 7) * (incident ? 2.2 : 1) * jitter(0.30));
-    const rageClicks = Math.round((s.ux.rageClicks / 7) * (incident ? 1.7 : 1) * jitter(0.25));
-    const uptime = +Math.min(1, s.ux.uptime - (incident ? incident.uptimeDrop : 0) + (rand() - 0.5) * 0.0006).toFixed(5);
+    s.pages.forEach((p, pi) => {
+      const hit = incident && incident.pages && incident.pages.indexOf(p.id) >= 0;
 
-    daily.push({
-      date, site: s.id, sessions, users, newUsers, returningUsers, orders, revenue, adSpend,
-      loadMs, bounce, errorRate, failedApi, jsErrors, rageClicks, uptime,
-      incident: incident ? incident.label : null,
+      const sessions = Math.round(siteSessions * p.share * jitter(0.08));
+      const users = Math.round(siteUsers * p.share * jitter(0.08));
+      const newUsers = Math.min(users, Math.round(siteNewUsers * p.share * jitter(0.10)));
+      const returningUsers = Math.max(0, users - newUsers);
+
+      // A slow, erroring page converts worse — the reason to watch it per page.
+      const drag = hit ? 0.86 : 1;
+      const orders = Math.max(0, Math.round(siteOrders * p.share * (p.conv / convNorm) * drag * jitter(0.12)));
+      const revenue = Math.round(orders * s.aov * jitter(0.05));
+
+      const loadMs = Math.round(s.ux.loadMs * p.load * (hit ? incident.loadMult : 1) * jitter(0.12));
+      const bounce = +Math.min(0.95, Math.max(0.05,
+        (s.ux.bounce + p.bounce) * (hit ? 1.09 : 1) * jitter(0.07))).toFixed(4);
+      const errorRate = +(s.ux.errorRate * (hit ? 1.8 : 1) * jitter(0.22)).toFixed(5);
+      const failedApi = +(s.ux.failedApi * (hit ? incident.failedApiMult : 1) * jitter(0.25)).toFixed(5);
+      const jsErrors = Math.round((s.ux.jsErrors / 7) * p.share * (hit ? 2.2 : 1) * jitter(0.30));
+      const rageClicks = Math.round((s.ux.rageClicks / 7) * p.share * (hit ? 1.7 : 1) * jitter(0.25));
+
+      daily.push({
+        date, site: s.id, page: p.id,
+        sessions, users, newUsers, returningUsers, orders, revenue,
+        // Ad spend is bought per site, so it is attributed by session share.
+        adSpend: Math.round(siteAdSpend * p.share),
+        bounce, loadMs, errorRate, failedApi, jsErrors, rageClicks,
+        incident: hit ? incident.label : null,
+      });
+    });
+
+    siteDaily.push({
+      date, site: s.id,
+      uptime: +Math.min(1, s.ux.uptime - (incident ? incident.uptimeDrop : 0) + (rand() - 0.5) * 0.0006).toFixed(5),
     });
   });
 });
@@ -149,7 +195,7 @@ const data = {
     id: s.id, name: s.name, domain: s.domain, slot: s.slot,
     aov: s.aov, retention: s.retention,
     hasChat: s.hasChat, chatLabel: s.chatLabel || null, chat: s.chat || null,
-    subPages: s.subPages,
+    pages: s.pages.map(({ id, name, kind, share }) => ({ id, name, kind, share })),
     funnel: s.funnel.map(([label, loss]) => ({ label, cumulativeLoss: loss / 100 })),
     chatFunnel: (s.chatFunnel || []).map(([label, loss]) => ({ label, cumulativeLoss: loss / 100 })),
     sources: s.sources.map(([label, share]) => ({ label, share: share / 100 })),
@@ -160,6 +206,7 @@ const data = {
     },
   })),
   daily,
+  siteDaily,
 };
 
 mkdirSync('data', { recursive: true });
@@ -169,4 +216,5 @@ writeFileSync('assets/data.js',
   '// Generated by scripts/generate-data.mjs — do not edit by hand.\n'
   + 'window.DASHBOARD_DATA = ' + JSON.stringify(data) + ';\n');
 
-console.log(`wrote ${daily.length} daily rows for ${SITES.length} sites over ${DAYS} days`);
+const pageCount = SITES.reduce((a, s) => a + s.pages.length, 0);
+console.log(`wrote ${daily.length} page-day rows (${pageCount} pages, ${SITES.length} sites, ${DAYS} days)`);
