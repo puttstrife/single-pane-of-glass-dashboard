@@ -184,6 +184,11 @@ const data = {
     errorRate: { good: 0.02, warning: 0.035 },
     failedApi: { good: 0.01, warning: 0.02 },
     bounce: { good: 0.45, warning: 0.55 },
+    // Email benchmarks are industry rules of thumb, not the source's — swap them
+    // for your own list's history before trusting the colours.
+    emailOpen: { good: 0.25, warning: 0.18 },
+    emailClick: { good: 0.03, warning: 0.02 },
+    emailUnsub: { good: 0.005, warning: 0.008 },
   },
   ranges: [
     { id: '7d', label: '7 days', days: 7 },

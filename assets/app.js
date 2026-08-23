@@ -113,11 +113,13 @@
     };
   }
 
-  /* Thresholds → a named state. Higher is better only for uptime. */
+  /* Thresholds → a named state. Most metrics are faults, where lower is better;
+     these few are outcomes, where higher is. */
+  var HIGHER_IS_BETTER = { uptime: 1, emailOpen: 1, emailClick: 1 };
   function statusOf(metric, value) {
     var t = D.thresholds[metric];
     if (!t) return null;
-    if (metric === 'uptime') {
+    if (HIGHER_IS_BETTER[metric]) {
       if (value >= t.good) return 'good';
       return value >= t.warning ? 'warning' : 'critical';
     }
@@ -181,7 +183,7 @@
 
   function niceTicks(min, max, target) {
     var span = max - min;
-    if (span <= 0) return [min];
+    if (span <= 0) return [min, min + 1];
     var raw = span / (target || 4);
     var mag = Math.pow(10, Math.floor(Math.log10(raw)));
     var step = [1, 2, 2.5, 5, 10].map(function (m) { return m * mag; })
@@ -189,6 +191,9 @@
     var start = Math.floor(min / step) * step;
     var out = [];
     for (var v = start; v <= max + step * 0.001; v += step) out.push(+v.toFixed(6));
+    // The top tick IS the plot ceiling, so it has to sit at or above the peak —
+    // otherwise the line is drawn outside the plot and clipped by the card.
+    if (out[out.length - 1] < max) out.push(+(out[out.length - 1] + step).toFixed(6));
     return out;
   }
   function endRoundedPathH(x, y, w, h, r) {
@@ -610,6 +615,12 @@
     var all = series.reduce(function (a, s) { return a.concat(s.values); }, []);
     var max = Math.max.apply(null, all);
     var min = opts.zeroBased ? 0 : Math.min.apply(null, all);
+    // Keep the target inside the domain: a threshold you can't see tells you
+    // nothing about how far over it you are.
+    if (opts.threshold !== undefined) {
+      max = Math.max(max, opts.threshold);
+      min = Math.min(min, opts.threshold);
+    }
     var ticks = niceTicks(min, max, 4);
     var lo = ticks[0], hi = ticks[ticks.length - 1];
 
@@ -996,7 +1007,12 @@
       [th('Source'), th('Sessions'), th('Share'), th('')], body));
   }
 
-  /* ── scorecard ────────────────────────────────────────────── */
+  /* ── scoreboard ───────────────────────────────────────────── */
+  function biggestDrop(s) {
+    var steps = funnelSteps(s, 'site');
+    return steps.slice(1).reduce(function (a, b) { return b.stepLoss > a.stepLoss ? b : a; }, steps[1]);
+  }
+
   function renderScorecard() {
     var host = document.getElementById('table-score');
     clear(host);
@@ -1006,15 +1022,30 @@
     D.sites.forEach(function (s) {
       var list = rows(dates, s.id);
       var k = kpis(list);
+      var drop = biggestDrop(s);
       var tr = el('tr', { 'data-selected': String(state.site === 'all' || state.site === s.id) });
       var head = el('th', { scope: 'row' });
       head.appendChild(siteKey(s));
       tr.appendChild(head);
+
       [count(k.sessions), count(k.users), pct(k.conversion, 2), count(k.orders),
-       moneyExact(k.revenue), money2(k.aov), money2(k.revPerUser),
-       moneyExact(k.adSpend), k.roas.toFixed(1) + '×'
+       moneyExact(k.revenue), money2(k.aov), money2(k.revPerUser), k.roas.toFixed(1) + '×'
       ].forEach(function (v) { tr.appendChild(el('td', { text: v })); });
-      tr.appendChild(el('td', {}, [statusPill(siteStatus(list))]));
+
+      // Biggest drop is the source's most useful column — keep it, and name the
+      // step rather than only the percentage.
+      var dropCell = el('td');
+      dropCell.appendChild(el('span', { class: 'metric', 'data-status': drop.stepLoss >= 0.35 ? 'warning' : null,
+        text: drop.label + '  −' + pct(drop.stepLoss, 0) }));
+      tr.appendChild(dropCell);
+
+      var trendCell = el('td', { class: 'trend-cell' });
+      trendCell.appendChild(sparkline(dates.map(function (d) {
+        return sum(rows([d], s.id), 'revenue');
+      }), 92, 24));
+      tr.appendChild(trendCell);
+
+      tr.appendChild(el('td', {}, [statusPill(siteStatus(list, uptimeOf(dates, s.id)))]));
       body.appendChild(tr);
     });
 
@@ -1024,20 +1055,113 @@
       el('td', { text: count(all.sessions) }), el('td', { text: count(all.users) }),
       el('td', { text: pct(all.conversion, 2) }), el('td', { text: count(all.orders) }),
       el('td', { text: moneyExact(all.revenue) }), el('td', { text: money2(all.aov) }),
-      el('td', { text: money2(all.revPerUser) }), el('td', { text: moneyExact(all.adSpend) }),
-      el('td', { text: all.roas.toFixed(1) + '×' }), el('td', {})
+      el('td', { text: money2(all.revPerUser) }), el('td', { text: all.roas.toFixed(1) + '×' }),
+      el('td', {}), el('td', {}), el('td', {})
     ])]);
 
     host.appendChild(tableOf(null,
       [th('Website'), th('Sessions'), th('Users'), th('Conversion'), th('Orders'),
-       th('Revenue'), th('AOV'), th('Rev / user'), th('Ad spend'), th('ROAS'), th('Health')],
+       th('Revenue'), th('AOV'), th('Rev / user'), th('ROAS'),
+       th('Biggest drop'), th('Revenue trend'), th('Health')],
       body, foot));
   }
 
-  /* ── engagement ───────────────────────────────────────────── */
-  function renderEngagement() {
-    var host = document.getElementById('table-engage');
+  /* ── email ────────────────────────────────────────────────── */
+  function renderEmail() {
+    var host = document.getElementById('table-email');
+    var split = document.getElementById('email-split');
+    clear(host); clear(split);
+
+    var body = el('tbody');
+    D.sites.forEach(function (s) {
+      var e = s.email;
+      var tr = el('tr', { 'data-selected': String(state.site === 'all' || state.site === s.id) });
+      var head = el('th', { scope: 'row' });
+      head.appendChild(siteKey(s));
+      tr.appendChild(head);
+      tr.appendChild(el('td', { text: count(e.sent) }));
+      [['emailOpen', e.open, pct(e.open, 0)], ['emailClick', e.click, pct(e.click)],
+       ['emailUnsub', e.unsub, pct(e.unsub, 1)]
+      ].forEach(function (m) {
+        var cell = el('td');
+        cell.appendChild(el('span', { class: 'metric', 'data-status': statusOf(m[0], m[1]), text: m[2] }));
+        tr.appendChild(cell);
+      });
+      // Clicks per open says whether the body worked, separately from the subject.
+      tr.appendChild(el('td', { text: e.open ? pct(e.click / e.open) : '—' }));
+      tr.appendChild(el('td', { text: count(e.sent * e.click) }));
+      body.appendChild(tr);
+    });
+
+    host.appendChild(tableOf(null,
+      [th('Website'), th('Sent'), th('Open'), th('Click'), th('Unsub'),
+       th('Click to open'), th('Clicks')], body));
+
+    document.getElementById('email-hint').textContent =
+      'Per campaign period, not the selected range · benchmarks: open '
+      + pct(D.thresholds.emailOpen.good, 0) + ', click ' + pct(D.thresholds.emailClick.good, 0)
+      + ', unsub under ' + pct(D.thresholds.emailUnsub.good, 1);
+
+    // Campaigns and top buyers sit side by side under the table.
+    var shown = state.site === 'all' ? D.sites : [site(state.site)];
+
+    var campaigns = [];
+    shown.forEach(function (s) {
+      s.email.campaigns.forEach(function (c) { campaigns.push({ site: s, c: c }); });
+    });
+    campaigns.sort(function (a, b) { return b.c.open - a.c.open; });
+    var maxOpen = campaigns[0] ? campaigns[0].c.open : 1;
+
+    var campBody = el('tbody');
+    campaigns.forEach(function (r) {
+      var cell = el('td', { class: 'bar-cell' });
+      cell.appendChild(el('span', { class: 'bar-value', text: pct(r.c.open, 0) + ' open' }));
+      var track = el('span', { class: 'bar-track' });
+      var fill = el('span', { class: 'bar-fill' });
+      fill.style.width = (r.c.open / maxOpen * 100).toFixed(1) + '%';
+      track.appendChild(fill);
+      cell.appendChild(track);
+      var nameCell = el('th', { scope: 'row', text: r.c.name });
+      if (state.site === 'all') nameCell.appendChild(el('span', { class: 'row-sub', text: r.site.name }));
+      campBody.appendChild(el('tr', {}, [nameCell, cell]));
+    });
+    var campWrap = el('div', { class: 'table-wrap' });
+    campWrap.appendChild(tableOf('Campaigns by open rate.', [th('Campaign'), th('Open rate')], campBody));
+
+    var buyers = [];
+    shown.forEach(function (s) {
+      s.email.topBuyers.forEach(function (b) { buyers.push({ site: s, b: b }); });
+    });
+    buyers.sort(function (a, b) { return b.b.revenue - a.b.revenue; });
+    buyers = buyers.slice(0, 8);
+    var maxSpend = buyers[0] ? buyers[0].b.revenue : 1;
+
+    var buyerBody = el('tbody');
+    buyers.forEach(function (r) {
+      var cell = el('td', { class: 'bar-cell' });
+      cell.appendChild(el('span', { class: 'bar-value', text: moneyExact(r.b.revenue) }));
+      var track = el('span', { class: 'bar-track' });
+      var fill = el('span', { class: 'bar-fill' });
+      fill.style.width = (r.b.revenue / maxSpend * 100).toFixed(1) + '%';
+      track.appendChild(fill);
+      cell.appendChild(track);
+      var nameCell = el('th', { scope: 'row', text: r.b.name });
+      if (state.site === 'all') nameCell.appendChild(el('span', { class: 'row-sub', text: r.site.name }));
+      buyerBody.appendChild(el('tr', {}, [nameCell, cell]));
+    });
+    var buyerWrap = el('div', { class: 'table-wrap' });
+    buyerWrap.appendChild(tableOf('Top buyers by revenue. Contact details deliberately left out of the view.',
+      [th('Buyer'), th('Revenue')], buyerBody));
+
+    split.appendChild(campWrap);
+    split.appendChild(buyerWrap);
+  }
+
+  /* ── chat & retention ─────────────────────────────────────── */
+  function renderChat() {
+    var host = document.getElementById('table-chat');
     clear(host);
+    var dates = datesInScope();
     var body = el('tbody');
 
     D.sites.forEach(function (s) {
@@ -1045,19 +1169,34 @@
       var head = el('th', { scope: 'row' });
       head.appendChild(siteKey(s));
       tr.appendChild(head);
-      [count(s.email.sent), pct(s.email.open, 0), pct(s.email.click), pct(s.email.unsub, 1),
-       s.hasChat ? s.chatLabel : '—',
-       s.hasChat ? s.chat.msgsPerSession.toFixed(1) : '—',
-       s.hasChat ? duration(s.chat.avgSeconds) : '—',
-       pct(s.retention, 0)
-      ].forEach(function (v) { tr.appendChild(el('td', { text: v })); });
+
+      if (!s.hasChat) {
+        tr.appendChild(el('td', { class: 'muted-cell', colspan: '5', text: 'No chat surface' }));
+        tr.appendChild(el('td', { text: pct(s.retention, 0) }));
+        body.appendChild(tr);
+        return;
+      }
+
+      var chatPages = s.pages.filter(function (p) { return p.kind === 'chat'; });
+      var chatRows = D.daily.filter(function (r) {
+        return r.site === s.id && dates.indexOf(r.date) >= 0
+          && chatPages.some(function (p) { return p.id === r.page; });
+      });
+      var k = kpis(chatRows);
+      var chatFunnelEnd = s.chatFunnel.length ? s.chatFunnel[s.chatFunnel.length - 1].cumulativeLoss : 0;
+
+      tr.appendChild(el('td', { text: s.chatLabel }));
+      tr.appendChild(el('td', { text: count(k.sessions) }));
+      tr.appendChild(el('td', { text: s.chat.msgsPerSession.toFixed(1) }));
+      tr.appendChild(el('td', { text: duration(s.chat.avgSeconds) }));
+      tr.appendChild(el('td', { text: pct(chatFunnelEnd, 0) }));
+      tr.appendChild(el('td', { text: pct(s.retention, 0) }));
       body.appendChild(tr);
     });
 
-    host.appendChild(tableOf('Email figures are per campaign period; chat and retention are site settings.',
-      [th('Website'), th('Emails sent'), th('Open'), th('Click'), th('Unsub'),
-       th('Chat surface'), th('Msgs / session'), th('Avg. length'), th('Retention')],
-      body));
+    host.appendChild(tableOf(null,
+      [th('Website'), th('Surface'), th('Chat sessions'), th('Msgs / session'),
+       th('Avg. length'), th('Drop before purchase'), th('Retention')], body));
   }
 
   /* ── orchestration ────────────────────────────────────────── */
@@ -1107,7 +1246,8 @@
     renderPages();
     renderMix();
     renderScorecard();
-    renderEngagement();
+    renderEmail();
+    renderChat();
   }
 
   function init() {

@@ -30,8 +30,9 @@ Then open http://localhost:4321.
 | Funnel | Where users drop out — whole site, or the chat surface for sites that have one |
 | Page versions | Every landing / main / chat version side by side: sessions, conversion, revenue per session, bounce, load |
 | Traffic mix | Which sources bring the sessions |
-| Website scorecard | Every site, every headline metric, one table |
-| Engagement | Email, chat and retention per site |
+| Scoreboard | Every site, every headline metric — including the source's biggest-drop column and a revenue trend line |
+| Email | Sent, open, click, unsub and click-to-open per site, plus campaigns ranked by open rate and top buyers by revenue |
+| Chat & retention | Chat surface, sessions, messages per session, average length, drop before purchase, retention |
 
 The sidebar picks the site — and expands into that site's pages, so you can scope
 the whole pane to a single landing version or chat entry. The pill picks the range
@@ -66,7 +67,9 @@ all preserved as the anchor values for the data.
 | Hover-only tooltips on `div`s | Buttons with `aria-label`s, keyboard focus showing the same as hover, and a table view behind every chart. |
 | Five sub-pages per site listed in the sidebar, with no data behind them | Pages are the grain the data is generated at. Every metric exists per page, the sidebar expands into them, and selecting one scopes the entire pane — including its own funnel for chat entries. |
 | No way to compare landing versions | A Page versions card ranks every version on conversion, with revenue-per-session, bounce and load beside it, and states the gap in money. Comparisons are like-for-like: landing against landing, chat against chat. |
-| Top-buyer names with email addresses | Dropped from the view. A monitoring pane does not need customer contact details on screen. |
+| Email tab per site, three clicks from the overview | An Email card on the pane: the same figures, plus click-to-open, benchmark colouring, and campaigns ranked by open rate across all sites at once. |
+| Top-buyer names with email addresses | Kept as a ranked top-buyers list, without the contact details. A dashboard that gets shared around does not need customer email addresses on screen — say the word and the column comes back. |
+| `biggestDrop` computed but shown only as text in one table | Kept as a scoreboard column, naming the step and the loss, and it feeds the alert list. |
 
 **One inconsistency in the source, carried nowhere:** its `conv` figures only
 reconcile for Votive Society (3.8% × 18.4k users ≈ 698 orders). For Ask Sabrina and
@@ -104,7 +107,10 @@ infrastructure fact about the host, not about one page.
 ```
 
 `slot` picks the site's chart colour (1–3). Thresholds drive every status pill and
-alert, so tune them per your SLOs before trusting the colours.
+alert, so tune them per your SLOs before trusting the colours. `uptime`,
+`emailOpen` and `emailClick` are graded higher-is-better; everything else is a
+fault, where lower is better. The email benchmarks are industry rules of thumb
+rather than anything from the source — replace them with your own list history.
 
 The bundled data comes from `node scripts/generate-data.mjs` — seeded, so
 regenerating produces no diff. It is fabricated: the site-level anchors are the
