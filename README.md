@@ -55,6 +55,9 @@ and none of them hide a number behind a tab:
 - **Cards fold.** The chevron in any card header collapses it, and the choice is
   remembered per card. The three reference blocks — traffic mix, email, chat and
   retention — start folded, because they are looked up rather than watched.
+- **Sidebar sites fold too**, from their own chevron, independently of which site
+  is selected: open one site's page list without leaving the site you are reading,
+  or collapse an eight-version list to reach the site under it. Remembered per site.
 - **A density switch** in the header trades whitespace for rows; it is remembered
   too, and it shrinks chart heights and row pitch, not just padding.
 

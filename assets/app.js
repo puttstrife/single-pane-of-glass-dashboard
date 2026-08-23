@@ -48,6 +48,19 @@
      switch that only changes CSS still leaves the charts eating the page. */
   function compactMode() { return document.documentElement.getAttribute('data-density') === 'compact'; }
 
+  /* Which sites show their page list. Independent of selection, so you can open
+     one site's pages without leaving the site you are looking at — and collapse a
+     long list to reach the site below it. */
+  var expanded = {};
+  try { expanded = JSON.parse(localStorage.getItem('spg-expanded') || '{}'); } catch (e) { expanded = {}; }
+  function isExpanded(s) {
+    return expanded[s.id] === undefined ? state.site === s.id : !!expanded[s.id];
+  }
+  function setExpanded(id, open) {
+    expanded[id] = open;
+    localStorage.setItem('spg-expanded', JSON.stringify(expanded));
+  }
+
   var state = {
     density: localStorage.getItem('spg-density') || 'comfortable',
     range: '30d',
@@ -287,27 +300,45 @@
 
     D.sites.forEach(function (s) {
       var status = siteStatus(rows(dates, s.id), uptimeOf(dates, s.id));
-      var open = state.site === s.id;
-      host.appendChild(el('button', {
-        type: 'button', 'aria-current': String(open && !state.page),
-        'aria-expanded': s.pages.length > 1 ? String(open) : null,
+      var hasPages = s.pages.length > 1;
+      var open = hasPages && isExpanded(s);
+      var listId = 'nav-pages-' + s.id;
+
+      var row = el('div', { class: 'nav-row' });
+      row.appendChild(el('button', {
+        type: 'button', class: 'nav-main', 'aria-current': String(state.site === s.id && !state.page),
         onclick: function () { select(s.id, null); }
       }, [
         el('span', { class: 'status-dot', 'data-status': status, 'aria-hidden': 'true' }),
         el('span', { class: 'nav-name' }, [
           el('span', { text: s.name }),
-          el('span', { class: 'nav-domain', text: s.domain })
-        ]),
-        el('span', { class: 'nav-meta', text: STATUS_META[status].label })
+          // Second line is the status, not the domain: at 240px the domain and a
+          // status label together wrap, and the domain is in the page header
+          // the moment you select the site.
+          el('span', { class: 'nav-domain' }, [
+            el('span', { class: 'nav-status', 'data-status': status, text: STATUS_META[status].label })
+          ])
+        ])
       ]));
 
-      // Pages only expand for the site you are looking at, and only where there
-      // is more than one — a lone "Main web" row is noise.
-      if (!open || s.pages.length < 2) return;
+      // The chevron opens the page list without selecting the site, so a long
+      // list can be folded away to reach the site under it.
+      if (hasPages) {
+        row.appendChild(el('button', {
+          type: 'button', class: 'nav-chev', 'aria-expanded': String(open), 'aria-controls': listId,
+          'aria-label': (open ? 'Hide' : 'Show') + ' pages of ' + s.name,
+          onclick: function () { setExpanded(s.id, !open); renderNav(); }
+        }, [el('span', { class: 'chev', 'aria-hidden': 'true', text: '⌃' })]));
+      }
+      host.appendChild(row);
+
+      if (!open) return;
+      var list = el('div', { class: 'nav-pages', id: listId });
+      host.appendChild(list);
       s.pages.forEach(function (p) {
-        var list = rows(dates, s.id, p.id);
-        var k = kpis(list);
-        host.appendChild(el('button', {
+        var pageRows = rows(dates, s.id, p.id);
+        var k = kpis(pageRows);
+        list.appendChild(el('button', {
           type: 'button', class: 'nav-sub', 'aria-current': String(state.page === p.id),
           onclick: function () { select(s.id, p.id); }
         }, [
@@ -329,6 +360,7 @@
     state.site = id;
     state.page = pageId || null;
     state.emphasis = null;
+    if (id !== 'all') setExpanded(id, true);
     var s = site(id);
     var p = pageOf(s, state.page);
     // A chat page has only one funnel worth showing; anything else defaults back.
@@ -1117,23 +1149,29 @@
       s.email.campaigns.forEach(function (c) { campaigns.push({ site: s, c: c }); });
     });
     campaigns.sort(function (a, b) { return b.c.open - a.c.open; });
-    var maxOpen = campaigns[0] ? campaigns[0].c.open : 1;
 
     var campBody = el('tbody');
     campaigns.forEach(function (r) {
-      var cell = el('td', { class: 'bar-cell' });
-      cell.appendChild(el('span', { class: 'bar-value', text: pct(r.c.open, 0) + ' open' }));
-      var track = el('span', { class: 'bar-track' });
-      var fill = el('span', { class: 'bar-fill' });
-      fill.style.width = (r.c.open / maxOpen * 100).toFixed(1) + '%';
-      track.appendChild(fill);
-      cell.appendChild(track);
       var nameCell = el('th', { scope: 'row', text: r.c.name });
       if (state.site === 'all') nameCell.appendChild(el('span', { class: 'row-sub', text: r.site.name }));
-      campBody.appendChild(el('tr', {}, [nameCell, cell]));
+
+      // Against the site's own average, in points — the only comparison that
+      // says whether a campaign did well, and one a reader can check.
+      var diff = r.c.open - r.site.email.open;
+      var vs = el('span', { class: 'delta', 'data-dir': Math.abs(diff) < 0.005 ? 'flat' : diff > 0 ? 'good' : 'bad' }, [
+        el('span', { class: 'arrow', 'aria-hidden': 'true', text: Math.abs(diff) < 0.005 ? '→' : diff > 0 ? '↑' : '↓' }),
+        el('span', { text: (diff > 0 ? '+' : '') + (diff * 100).toFixed(1) + ' pts' })
+      ]);
+
+      campBody.appendChild(el('tr', {}, [
+        nameCell,
+        el('td', {}, [el('span', { class: 'metric', 'data-status': statusOf('emailOpen', r.c.open), text: pct(r.c.open, 0) })]),
+        el('td', {}, [vs])
+      ]));
     });
     var campWrap = el('div', { class: 'table-wrap scroll-cap' });
-    campWrap.appendChild(tableOf('Campaigns by open rate.', [th('Campaign'), th('Open rate')], campBody));
+    campWrap.appendChild(tableOf('Campaign open rate, against its own site average.',
+      [th('Campaign'), th('Open'), th('vs. site avg')], campBody));
 
     var buyers = [];
     shown.forEach(function (s) {
@@ -1141,24 +1179,24 @@
     });
     buyers.sort(function (a, b) { return b.b.revenue - a.b.revenue; });
     buyers = buyers.slice(0, 8);
-    var maxSpend = buyers[0] ? buyers[0].b.revenue : 1;
+    var buyerTotal = buyers.reduce(function (a, r) { return a + r.b.revenue; }, 0);
 
     var buyerBody = el('tbody');
-    buyers.forEach(function (r) {
-      var cell = el('td', { class: 'bar-cell' });
-      cell.appendChild(el('span', { class: 'bar-value', text: moneyExact(r.b.revenue) }));
-      var track = el('span', { class: 'bar-track' });
-      var fill = el('span', { class: 'bar-fill' });
-      fill.style.width = (r.b.revenue / maxSpend * 100).toFixed(1) + '%';
-      track.appendChild(fill);
-      cell.appendChild(track);
-      var nameCell = el('th', { scope: 'row', text: r.b.name });
+    buyers.forEach(function (r, i) {
+      var nameCell = el('th', { scope: 'row' }, [
+        el('span', { class: 'rank', 'aria-hidden': 'true', text: String(i + 1) }),
+        el('span', { text: r.b.name })
+      ]);
       if (state.site === 'all') nameCell.appendChild(el('span', { class: 'row-sub', text: r.site.name }));
-      buyerBody.appendChild(el('tr', {}, [nameCell, cell]));
+      buyerBody.appendChild(el('tr', {}, [
+        nameCell,
+        el('td', { text: moneyExact(r.b.revenue) }),
+        el('td', { text: buyerTotal ? pct(r.b.revenue / buyerTotal, 0) : '—' })
+      ]));
     });
     var buyerWrap = el('div', { class: 'table-wrap scroll-cap' });
     buyerWrap.appendChild(tableOf('Top buyers by revenue. Contact details deliberately left out of the view.',
-      [th('Buyer'), th('Revenue')], buyerBody));
+      [th('Buyer'), th('Revenue'), th('Share of top 8')], buyerBody));
 
     split.appendChild(campWrap);
     split.appendChild(buyerWrap);
