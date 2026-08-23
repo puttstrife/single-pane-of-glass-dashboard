@@ -1,0 +1,564 @@
+{
+  "meta": {
+    "title": "Marketing performance",
+    "generated": "2026-08-23",
+    "note": "Sample data. Replace assets/data.js with a feed from your own warehouse or analytics stack.",
+    "currency": "USD"
+  },
+  "targets": {
+    "cac": 9500,
+    "roas": 3.2,
+    "mqlToSql": 0.33,
+    "pipelinePerMonth": 3100000
+  },
+  "months": [
+    "2025-09",
+    "2025-10",
+    "2025-11",
+    "2025-12",
+    "2026-01",
+    "2026-02",
+    "2026-03",
+    "2026-04",
+    "2026-05",
+    "2026-06",
+    "2026-07",
+    "2026-08"
+  ],
+  "channels": [
+    {
+      "id": "paid-search",
+      "name": "Paid search",
+      "slot": 1
+    },
+    {
+      "id": "paid-social",
+      "name": "Paid social",
+      "slot": 2
+    },
+    {
+      "id": "organic",
+      "name": "Organic / SEO",
+      "slot": 3
+    },
+    {
+      "id": "email",
+      "name": "Lifecycle email",
+      "slot": 4
+    }
+  ],
+  "funnel": {
+    "ratios": [
+      {
+        "id": "sessions",
+        "name": "Sessions",
+        "perMql": 41
+      },
+      {
+        "id": "leads",
+        "name": "Leads",
+        "perMql": 3.4
+      },
+      {
+        "id": "mqls",
+        "name": "MQLs",
+        "perMql": 1
+      },
+      {
+        "id": "sqls",
+        "name": "SQLs",
+        "perMql": 0.32
+      },
+      {
+        "id": "customers",
+        "name": "Customers",
+        "perMql": 0.071
+      }
+    ]
+  },
+  "series": [
+    {
+      "month": "2025-09",
+      "channel": "paid-search",
+      "spend": 90778,
+      "mqls": 114,
+      "sqls": 40,
+      "customers": 9,
+      "pipeline": 1334778,
+      "revenue": 299666
+    },
+    {
+      "month": "2025-10",
+      "channel": "paid-search",
+      "spend": 97320,
+      "mqls": 116,
+      "sqls": 41,
+      "customers": 9,
+      "pipeline": 1432855,
+      "revenue": 313293
+    },
+    {
+      "month": "2025-11",
+      "channel": "paid-search",
+      "spend": 104706,
+      "mqls": 130,
+      "sqls": 44,
+      "customers": 9,
+      "pipeline": 1447470,
+      "revenue": 299272
+    },
+    {
+      "month": "2025-12",
+      "channel": "paid-search",
+      "spend": 81978,
+      "mqls": 105,
+      "sqls": 36,
+      "customers": 8,
+      "pipeline": 1208572,
+      "revenue": 264709
+    },
+    {
+      "month": "2026-01",
+      "channel": "paid-search",
+      "spend": 88434,
+      "mqls": 106,
+      "sqls": 35,
+      "customers": 7,
+      "pipeline": 1178671,
+      "revenue": 235543
+    },
+    {
+      "month": "2026-02",
+      "channel": "paid-search",
+      "spend": 96597,
+      "mqls": 112,
+      "sqls": 39,
+      "customers": 9,
+      "pipeline": 1363006,
+      "revenue": 310209
+    },
+    {
+      "month": "2026-03",
+      "channel": "paid-search",
+      "spend": 109047,
+      "mqls": 133,
+      "sqls": 45,
+      "customers": 11,
+      "pipeline": 1517619,
+      "revenue": 380106
+    },
+    {
+      "month": "2026-04",
+      "channel": "paid-search",
+      "spend": 103081,
+      "mqls": 117,
+      "sqls": 40,
+      "customers": 9,
+      "pipeline": 1369324,
+      "revenue": 312996
+    },
+    {
+      "month": "2026-05",
+      "channel": "paid-search",
+      "spend": 101753,
+      "mqls": 113,
+      "sqls": 39,
+      "customers": 9,
+      "pipeline": 1310350,
+      "revenue": 297194
+    },
+    {
+      "month": "2026-06",
+      "channel": "paid-search",
+      "spend": 118019,
+      "mqls": 133,
+      "sqls": 47,
+      "customers": 10,
+      "pipeline": 1597509,
+      "revenue": 346011
+    },
+    {
+      "month": "2026-07",
+      "channel": "paid-search",
+      "spend": 109624,
+      "mqls": 128,
+      "sqls": 44,
+      "customers": 9,
+      "pipeline": 1483555,
+      "revenue": 301756
+    },
+    {
+      "month": "2026-08",
+      "channel": "paid-search",
+      "spend": 116601,
+      "mqls": 138,
+      "sqls": 46,
+      "customers": 10,
+      "pipeline": 1614320,
+      "revenue": 334715
+    },
+    {
+      "month": "2025-09",
+      "channel": "paid-social",
+      "spend": 63507,
+      "mqls": 135,
+      "sqls": 33,
+      "customers": 5,
+      "pipeline": 1082070,
+      "revenue": 169883
+    },
+    {
+      "month": "2025-10",
+      "channel": "paid-social",
+      "spend": 66009,
+      "mqls": 136,
+      "sqls": 30,
+      "customers": 5,
+      "pipeline": 966413,
+      "revenue": 167000
+    },
+    {
+      "month": "2025-11",
+      "channel": "paid-social",
+      "spend": 74807,
+      "mqls": 150,
+      "sqls": 35,
+      "customers": 6,
+      "pipeline": 1152273,
+      "revenue": 195332
+    },
+    {
+      "month": "2025-12",
+      "channel": "paid-social",
+      "spend": 57766,
+      "mqls": 119,
+      "sqls": 27,
+      "customers": 4,
+      "pipeline": 897924,
+      "revenue": 131729
+    },
+    {
+      "month": "2026-01",
+      "channel": "paid-social",
+      "spend": 59503,
+      "mqls": 116,
+      "sqls": 26,
+      "customers": 4,
+      "pipeline": 885507,
+      "revenue": 129938
+    },
+    {
+      "month": "2026-02",
+      "channel": "paid-social",
+      "spend": 65594,
+      "mqls": 130,
+      "sqls": 31,
+      "customers": 5,
+      "pipeline": 988563,
+      "revenue": 166338
+    },
+    {
+      "month": "2026-03",
+      "channel": "paid-social",
+      "spend": 76533,
+      "mqls": 154,
+      "sqls": 34,
+      "customers": 5,
+      "pipeline": 1133722,
+      "revenue": 162744
+    },
+    {
+      "month": "2026-04",
+      "channel": "paid-social",
+      "spend": 73774,
+      "mqls": 142,
+      "sqls": 34,
+      "customers": 6,
+      "pipeline": 1092163,
+      "revenue": 196213
+    },
+    {
+      "month": "2026-05",
+      "channel": "paid-social",
+      "spend": 73829,
+      "mqls": 137,
+      "sqls": 33,
+      "customers": 5,
+      "pipeline": 1054761,
+      "revenue": 169392
+    },
+    {
+      "month": "2026-06",
+      "channel": "paid-social",
+      "spend": 82986,
+      "mqls": 155,
+      "sqls": 37,
+      "customers": 6,
+      "pipeline": 1184433,
+      "revenue": 201150
+    },
+    {
+      "month": "2026-07",
+      "channel": "paid-social",
+      "spend": 77447,
+      "mqls": 150,
+      "sqls": 35,
+      "customers": 5,
+      "pipeline": 1185924,
+      "revenue": 168053
+    },
+    {
+      "month": "2026-08",
+      "channel": "paid-social",
+      "spend": 83560,
+      "mqls": 156,
+      "sqls": 34,
+      "customers": 6,
+      "pipeline": 1134928,
+      "revenue": 199074
+    },
+    {
+      "month": "2025-09",
+      "channel": "organic",
+      "spend": 38779,
+      "mqls": 68,
+      "sqls": 28,
+      "customers": 8,
+      "pipeline": 591911,
+      "revenue": 168015
+    },
+    {
+      "month": "2025-10",
+      "channel": "organic",
+      "spend": 40874,
+      "mqls": 68,
+      "sqls": 29,
+      "customers": 7,
+      "pipeline": 595549,
+      "revenue": 144575
+    },
+    {
+      "month": "2025-11",
+      "channel": "organic",
+      "spend": 46373,
+      "mqls": 81,
+      "sqls": 33,
+      "customers": 9,
+      "pipeline": 700194,
+      "revenue": 192458
+    },
+    {
+      "month": "2025-12",
+      "channel": "organic",
+      "spend": 36265,
+      "mqls": 63,
+      "sqls": 27,
+      "customers": 7,
+      "pipeline": 578102,
+      "revenue": 149619
+    },
+    {
+      "month": "2026-01",
+      "channel": "organic",
+      "spend": 38004,
+      "mqls": 62,
+      "sqls": 25,
+      "customers": 7,
+      "pipeline": 531231,
+      "revenue": 147937
+    },
+    {
+      "month": "2026-02",
+      "channel": "organic",
+      "spend": 45380,
+      "mqls": 82,
+      "sqls": 35,
+      "customers": 10,
+      "pipeline": 761526,
+      "revenue": 211853
+    },
+    {
+      "month": "2026-03",
+      "channel": "organic",
+      "spend": 51272,
+      "mqls": 88,
+      "sqls": 35,
+      "customers": 10,
+      "pipeline": 711641,
+      "revenue": 215288
+    },
+    {
+      "month": "2026-04",
+      "channel": "organic",
+      "spend": 51533,
+      "mqls": 85,
+      "sqls": 35,
+      "customers": 10,
+      "pipeline": 755150,
+      "revenue": 204407
+    },
+    {
+      "month": "2026-05",
+      "channel": "organic",
+      "spend": 50195,
+      "mqls": 85,
+      "sqls": 36,
+      "customers": 10,
+      "pipeline": 741147,
+      "revenue": 208661
+    },
+    {
+      "month": "2026-06",
+      "channel": "organic",
+      "spend": 55849,
+      "mqls": 93,
+      "sqls": 38,
+      "customers": 10,
+      "pipeline": 778980,
+      "revenue": 207003
+    },
+    {
+      "month": "2026-07",
+      "channel": "organic",
+      "spend": 53555,
+      "mqls": 93,
+      "sqls": 37,
+      "customers": 10,
+      "pipeline": 754872,
+      "revenue": 215984
+    },
+    {
+      "month": "2026-08",
+      "channel": "organic",
+      "spend": 54929,
+      "mqls": 90,
+      "sqls": 36,
+      "customers": 9,
+      "pipeline": 770795,
+      "revenue": 184061
+    },
+    {
+      "month": "2025-09",
+      "channel": "email",
+      "spend": 16682,
+      "mqls": 27,
+      "sqls": 11,
+      "customers": 3,
+      "pipeline": 203242,
+      "revenue": 57519
+    },
+    {
+      "month": "2025-10",
+      "channel": "email",
+      "spend": 17742,
+      "mqls": 27,
+      "sqls": 10,
+      "customers": 2,
+      "pipeline": 191896,
+      "revenue": 38141
+    },
+    {
+      "month": "2025-11",
+      "channel": "email",
+      "spend": 19695,
+      "mqls": 32,
+      "sqls": 12,
+      "customers": 3,
+      "pipeline": 219312,
+      "revenue": 56822
+    },
+    {
+      "month": "2025-12",
+      "channel": "email",
+      "spend": 16104,
+      "mqls": 24,
+      "sqls": 9,
+      "customers": 2,
+      "pipeline": 168032,
+      "revenue": 38733
+    },
+    {
+      "month": "2026-01",
+      "channel": "email",
+      "spend": 16876,
+      "mqls": 27,
+      "sqls": 10,
+      "customers": 2,
+      "pipeline": 188348,
+      "revenue": 37068
+    },
+    {
+      "month": "2026-02",
+      "channel": "email",
+      "spend": 17840,
+      "mqls": 29,
+      "sqls": 11,
+      "customers": 3,
+      "pipeline": 215162,
+      "revenue": 57081
+    },
+    {
+      "month": "2026-03",
+      "channel": "email",
+      "spend": 19665,
+      "mqls": 31,
+      "sqls": 12,
+      "customers": 3,
+      "pipeline": 223992,
+      "revenue": 55371
+    },
+    {
+      "month": "2026-04",
+      "channel": "email",
+      "spend": 18613,
+      "mqls": 31,
+      "sqls": 12,
+      "customers": 3,
+      "pipeline": 232022,
+      "revenue": 58315
+    },
+    {
+      "month": "2026-05",
+      "channel": "email",
+      "spend": 18274,
+      "mqls": 27,
+      "sqls": 10,
+      "customers": 2,
+      "pipeline": 183627,
+      "revenue": 38413
+    },
+    {
+      "month": "2026-06",
+      "channel": "email",
+      "spend": 20668,
+      "mqls": 33,
+      "sqls": 12,
+      "customers": 3,
+      "pipeline": 230636,
+      "revenue": 56646
+    },
+    {
+      "month": "2026-07",
+      "channel": "email",
+      "spend": 19945,
+      "mqls": 33,
+      "sqls": 13,
+      "customers": 3,
+      "pipeline": 255333,
+      "revenue": 56006
+    },
+    {
+      "month": "2026-08",
+      "channel": "email",
+      "spend": 21560,
+      "mqls": 32,
+      "sqls": 12,
+      "customers": 3,
+      "pipeline": 236504,
+      "revenue": 55937
+    }
+  ],
+  "totals": {
+    "mqls": 4436
+  }
+}
