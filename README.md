@@ -42,6 +42,26 @@ Ask Sabrina runs five landing versions plus its main site and two chat entries;
 Astrolover Sketch runs two landing versions, its main site and two Sketch Chat
 entries; Votive Society is a single surface, so it gets no comparison card.
 
+## Fitting on a screen
+
+A pane you scroll for six screens is not a single pane. Three things keep it short,
+and none of them hide a number behind a tab:
+
+- **Every grid row is paired**, so no half-row is left empty — health beside
+  alerts, the two charts together, scoreboard beside chat.
+- **Long lists scroll inside their card** instead of stretching it: page versions,
+  site health, the alert list, campaigns and top buyers each get a fixed window
+  with a sticky header.
+- **Cards fold.** The chevron in any card header collapses it, and the choice is
+  remembered per card. The three reference blocks — traffic mix, email, chat and
+  retention — start folded, because they are looked up rather than watched.
+- **A density switch** in the header trades whitespace for rows; it is remembered
+  too, and it shrinks chart heights and row pitch, not just padding.
+
+At a 900px viewport: 6.1 screens before, 3.5 comfortable, **2.6 compact**, and 1.0
+with everything folded — which makes an all-folded pane a usable status overview in
+its own right.
+
 ## Relationship to the source design
 
 This is a restructure of the **Website Performance Dashboard** design canvas

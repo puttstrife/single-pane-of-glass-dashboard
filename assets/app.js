@@ -44,7 +44,12 @@
   }
 
   /* ── state ────────────────────────────────────────────────── */
+  /* Compact trims chart heights and row pitch as well as padding — a density
+     switch that only changes CSS still leaves the charts eating the page. */
+  function compactMode() { return document.documentElement.getAttribute('data-density') === 'compact'; }
+
   var state = {
+    density: localStorage.getItem('spg-density') || 'comfortable',
     range: '30d',
     site: 'all',
     page: null,        // a page id within the selected site, or null for the whole site
@@ -402,7 +407,7 @@
     clear(spark);
     spark.appendChild(sparkline(dates.map(function (d) {
       return sum(scopeRows([d]), 'revenue');
-    }), 320, 56));
+    }), 320, compactMode() ? 40 : 56));
   }
 
   function renderTiles() {
@@ -433,7 +438,9 @@
         el('span', { class: 'value', text: d.value }),
         deltaChip(d.curr, d.prev, { lowerIsBetter: d.lowerIsBetter })
       ]);
-      tile.appendChild(sparkline(d.series));
+      // Compact shrinks the sparkline rather than dropping it — the delta says
+      // how much, the line says what shape got there.
+      tile.appendChild(sparkline(d.series, 120, compactMode() ? 18 : 30));
       if (d.foot) tile.appendChild(el('span', { class: 'target', text: d.foot }));
       host.appendChild(tile);
     });
@@ -600,7 +607,7 @@
     var sites = state.site === 'all' ? D.sites : [];
     var width = Math.max(300, host.clientWidth || 520);
     var m = { top: 16, right: 58, bottom: 28, left: 52 };
-    var height = 260;
+    var height = compactMode() ? 190 : 260;
     var plotW = width - m.left - m.right;
     var plotH = height - m.top - m.bottom;
 
@@ -797,7 +804,7 @@
     var width = Math.max(300, host.clientWidth || 520);
     var m = { top: 24, right: Math.min(124, Math.max(58, longest.length * 6.6 + 12)), bottom: 26,
               left: Math.min(120, Math.max(56, width * 0.24)) };
-    var rowH = 46, barH = 24;
+    var rowH = compactMode() ? 36 : 46, barH = compactMode() ? 20 : 24;
     var height = m.top + m.bottom + steps.length * rowH;
     var plotW = width - m.left - m.right;
 
@@ -1125,7 +1132,7 @@
       if (state.site === 'all') nameCell.appendChild(el('span', { class: 'row-sub', text: r.site.name }));
       campBody.appendChild(el('tr', {}, [nameCell, cell]));
     });
-    var campWrap = el('div', { class: 'table-wrap' });
+    var campWrap = el('div', { class: 'table-wrap scroll-cap' });
     campWrap.appendChild(tableOf('Campaigns by open rate.', [th('Campaign'), th('Open rate')], campBody));
 
     var buyers = [];
@@ -1149,7 +1156,7 @@
       if (state.site === 'all') nameCell.appendChild(el('span', { class: 'row-sub', text: r.site.name }));
       buyerBody.appendChild(el('tr', {}, [nameCell, cell]));
     });
-    var buyerWrap = el('div', { class: 'table-wrap' });
+    var buyerWrap = el('div', { class: 'table-wrap scroll-cap' });
     buyerWrap.appendChild(tableOf('Top buyers by revenue. Contact details deliberately left out of the view.',
       [th('Buyer'), th('Revenue')], buyerBody));
 
@@ -1250,7 +1257,58 @@
     renderChat();
   }
 
+  function applyDensity() {
+    document.documentElement.setAttribute('data-density', state.density);
+    document.querySelectorAll('[data-density]').forEach(function (b) {
+      if (b === document.documentElement) return;
+      b.setAttribute('aria-pressed', String(b.getAttribute('data-density') === state.density));
+    });
+  }
+
+  /* ── folding ──────────────────────────────────────────────────
+     A single pane should fit on a screen or two. The monitoring blocks stay
+     open; the reference blocks (traffic mix, email, chat) start folded and
+     remember what you choose. */
+  function setupFolds() {
+    document.querySelectorAll('.grid > section').forEach(function (card, i) {
+      var head = card.querySelector('.card-head');
+      var heading = head.querySelector('h2');
+      var id = heading.id || ('card-' + i);
+      var saved = localStorage.getItem('spg-fold-' + id);
+      var open = saved ? saved === 'open' : card.getAttribute('data-fold') !== 'closed';
+
+      var btn = el('button', {
+        class: 'fold', type: 'button',
+        'aria-expanded': String(open),
+        'aria-label': (open ? 'Collapse ' : 'Expand ') + heading.textContent
+      }, [el('span', { class: 'chev', 'aria-hidden': 'true', text: '⌃' })]);
+
+      function apply(next) {
+        card.setAttribute('data-folded', String(!next));
+        btn.setAttribute('aria-expanded', String(next));
+        btn.setAttribute('aria-label', (next ? 'Collapse ' : 'Expand ') + heading.textContent);
+        localStorage.setItem('spg-fold-' + id, next ? 'open' : 'closed');
+      }
+      btn.addEventListener('click', function () {
+        var next = btn.getAttribute('aria-expanded') !== 'true';
+        apply(next);
+        if (next) renderAll();   // charts inside were sized against a hidden box
+      });
+      apply(open);
+      head.insertBefore(btn, head.firstChild);
+    });
+  }
+
   function init() {
+    document.querySelectorAll('#density button').forEach(function (b) {
+      b.addEventListener('click', function () {
+        state.density = b.getAttribute('data-density');
+        localStorage.setItem('spg-density', state.density);
+        applyDensity();
+        renderAll();     // charts re-measure against the new pitch
+      });
+    });
+
     document.querySelectorAll('[data-table-for]').forEach(function (btn) {
       btn.addEventListener('click', function () {
         var target = document.getElementById('table-' + btn.getAttribute('data-table-for'));
@@ -1283,6 +1341,8 @@
     watch('chart-load', renderAll);
     watch('chart-funnel', renderFunnel);
 
+    applyDensity();
+    setupFolds();
     renderAll();
   }
 

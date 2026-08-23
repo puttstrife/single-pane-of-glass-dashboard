@@ -30,7 +30,13 @@
         <h1 id="page-title">All websites</h1>
         <p class="sub" id="page-sub">—</p>
       </div>
-      <div class="segmented" role="group" aria-label="Time range" id="ranges"></div>
+      <div class="head-controls">
+        <div class="segmented" role="group" aria-label="Time range" id="ranges"></div>
+        <div class="segmented segmented--sm" role="group" aria-label="Density" id="density">
+          <button type="button" data-density="comfortable" aria-pressed="true">Comfortable</button>
+          <button type="button" data-density="compact" aria-pressed="false">Compact</button>
+        </div>
+      </div>
     </div>
 
     <div id="banner"></div>
@@ -48,7 +54,6 @@
         <div class="hero-fill"></div>
         <div id="hero-spark"></div>
       </section>
-
       <section class="card card--tiles" aria-labelledby="h-tiles">
         <div class="card-head">
           <h2 id="h-tiles">Traffic &amp; conversion</h2>
@@ -56,23 +61,20 @@
         </div>
         <div class="tiles" id="tiles"></div>
       </section>
-
-      <section class="card" aria-labelledby="h-health">
+      <section class="card card--7" aria-labelledby="h-health">
         <div class="card-head">
           <h2 id="h-health">Site health</h2>
           <span class="hint" id="health-hint"></span>
         </div>
-        <div class="table-wrap" id="table-health"></div>
+        <div class="table-wrap scroll-cap" id="table-health"></div>
       </section>
-
-      <section class="card" aria-labelledby="h-attention">
+      <section class="card card--5" aria-labelledby="h-attention">
         <div class="card-head">
           <h2 id="h-attention">Needs attention</h2>
           <span class="hint">Computed from thresholds and period deltas</span>
         </div>
-        <ul class="alerts" id="alerts"></ul>
+        <ul class="alerts scroll-cap" id="alerts"></ul>
       </section>
-
       <section class="card card--half" aria-labelledby="h-rev">
         <div class="card-head">
           <h2 id="h-rev">Revenue by day</h2>
@@ -82,7 +84,6 @@
         <div class="legend" id="legend-rev" role="group" aria-label="Websites — toggle to emphasise"></div>
         <div class="table-wrap" id="table-rev" hidden></div>
       </section>
-
       <section class="card card--half" aria-labelledby="h-load">
         <div class="card-head">
           <h2 id="h-load">Page load time by day</h2>
@@ -92,7 +93,6 @@
         <div class="legend" id="legend-load" role="group" aria-label="Websites — toggle to emphasise"></div>
         <div class="table-wrap" id="table-load" hidden></div>
       </section>
-
       <section class="card card--half" aria-labelledby="h-funnel">
         <div class="card-head">
           <h2 id="h-funnel">Funnel</h2>
@@ -105,47 +105,42 @@
         <p class="callout" id="funnel-callout"></p>
         <div class="table-wrap" id="table-funnel" hidden></div>
       </section>
-
-      <section class="card" id="card-pages" aria-labelledby="h-pages">
-        <div class="card-head">
-          <h2 id="h-pages">Page versions</h2>
-          <span class="hint" id="pages-hint"></span>
-        </div>
-        <div class="table-wrap" id="table-pages"></div>
-        <p class="callout" id="pages-callout"></p>
-      </section>
-
-      <section class="card card--half" aria-labelledby="h-mix">
+      <section class="card card--half" aria-labelledby="h-mix" data-fold="closed">
         <div class="card-head">
           <h2 id="h-mix">Traffic mix</h2>
           <span class="hint">Share of sessions</span>
         </div>
         <div class="table-wrap" id="table-mix"></div>
       </section>
-
-      <section class="card" aria-labelledby="h-score">
+      <section class="card" id="card-pages" aria-labelledby="h-pages">
+        <div class="card-head">
+          <h2 id="h-pages">Page versions</h2>
+          <span class="hint" id="pages-hint"></span>
+        </div>
+        <div class="table-wrap scroll-cap" id="table-pages"></div>
+        <p class="callout" id="pages-callout"></p>
+      </section>
+      <section class="card card--7" aria-labelledby="h-score">
         <div class="card-head">
           <h2 id="h-score">Scoreboard</h2>
           <span class="hint">Every site, current range</span>
         </div>
         <div class="table-wrap" id="table-score"></div>
       </section>
-
-      <section class="card" aria-labelledby="h-email">
-        <div class="card-head">
-          <h2 id="h-email">Email</h2>
-          <span class="hint" id="email-hint"></span>
-        </div>
-        <div class="table-wrap" id="table-email"></div>
-        <div class="split" id="email-split"></div>
-      </section>
-
-      <section class="card" aria-labelledby="h-chat">
+      <section class="card card--5" aria-labelledby="h-chat" data-fold="closed">
         <div class="card-head">
           <h2 id="h-chat">Chat &amp; retention</h2>
           <span class="hint">Per site</span>
         </div>
         <div class="table-wrap" id="table-chat"></div>
+      </section>
+      <section class="card" aria-labelledby="h-email" data-fold="closed">
+        <div class="card-head">
+          <h2 id="h-email">Email</h2>
+          <span class="hint" id="email-hint"></span>
+        </div>
+        <div class="table-wrap" id="table-email"></div>
+        <div class="split split--3" id="email-split"></div>
       </section>
 
     </div>
