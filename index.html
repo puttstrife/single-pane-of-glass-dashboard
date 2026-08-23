@@ -18,7 +18,7 @@
 
   <aside class="sidebar">
     <div class="wordmark">
-      <span class="wordmark-mark" aria-hidden="true">V</span>
+      <span class="wordmark-mark" data-icon="activity" aria-hidden="true"></span>
       <span class="wordmark-text">Vantage</span>
     </div>
 
@@ -32,8 +32,8 @@
       <div class="field field--stack">
         <span id="density-label">Density</span>
         <div class="segmented segmented--fill" role="group" aria-labelledby="density-label" id="density">
-          <button type="button" data-density="comfortable" aria-pressed="true">Comfortable</button>
-          <button type="button" data-density="compact" aria-pressed="false">Compact</button>
+          <button type="button" data-density="comfortable" aria-pressed="true" data-icon="rows-2">Comfortable</button>
+          <button type="button" data-density="compact" aria-pressed="false" data-icon="rows-3">Compact</button>
         </div>
       </div>
 
@@ -47,12 +47,12 @@
             <span class="account-name">Admin User</span>
             <span class="account-role">admin@example.com</span>
           </span>
-          <span class="chev" aria-hidden="true">⌃</span>
+          <span class="chev" data-icon="chevron-down" aria-hidden="true"></span>
         </button>
         <div class="account-menu" id="account-menu" role="menu" hidden>
-          <button role="menuitem" type="button" data-placeholder>Profile</button>
-          <button role="menuitem" type="button" data-placeholder>Workspace settings</button>
-          <button role="menuitem" type="button" data-placeholder>Sign out</button>
+          <button role="menuitem" type="button" data-placeholder data-icon="user">Profile</button>
+          <button role="menuitem" type="button" data-placeholder data-icon="settings">Workspace settings</button>
+          <button role="menuitem" type="button" data-placeholder data-icon="log-out">Sign out</button>
           <p class="account-note">Placeholder — not wired to auth.</p>
         </div>
       </div>
@@ -110,7 +110,7 @@
       <section class="card card--half" aria-labelledby="h-rev">
         <div class="card-head">
           <h2 id="h-rev">Revenue by day</h2>
-          <button class="toggle-table" type="button" data-table-for="rev" aria-expanded="false">Table</button>
+          <button class="toggle-table" type="button" data-table-for="rev" aria-expanded="false" data-icon="table">Table</button>
         </div>
         <div class="chart" id="chart-rev"></div>
         <div class="legend" id="legend-rev" role="group" aria-label="Websites — toggle to emphasise"></div>
@@ -119,7 +119,7 @@
       <section class="card card--half" aria-labelledby="h-load">
         <div class="card-head">
           <h2 id="h-load">Page load time by day</h2>
-          <button class="toggle-table" type="button" data-table-for="load" aria-expanded="false">Table</button>
+          <button class="toggle-table" type="button" data-table-for="load" aria-expanded="false" data-icon="table">Table</button>
         </div>
         <div class="chart" id="chart-load"></div>
         <div class="legend" id="legend-load" role="group" aria-label="Websites — toggle to emphasise"></div>
@@ -130,7 +130,7 @@
           <h2 id="h-funnel">Funnel</h2>
           <div class="card-actions">
             <div class="segmented segmented--sm" role="group" aria-label="Funnel surface" id="funnel-surface"></div>
-            <button class="toggle-table" type="button" data-table-for="funnel" aria-expanded="false">Table</button>
+            <button class="toggle-table" type="button" data-table-for="funnel" aria-expanded="false" data-icon="table">Table</button>
           </div>
         </div>
         <div class="chart" id="chart-funnel"></div>
@@ -182,6 +182,7 @@
 
 </div>
 
+<script src="assets/icons.js"></script>
 <script src="assets/data.js"></script>
 <script src="assets/app.js"></script>
 </body>

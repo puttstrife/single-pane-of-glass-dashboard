@@ -145,10 +145,11 @@
     return value <= t.warning ? 'warning' : 'critical';
   }
   var STATUS_META = {
-    good:     { glyph: '●', label: 'Healthy' },
-    warning:  { glyph: '▲', label: 'Watch' },
-    critical: { glyph: '■', label: 'Degraded' }
+    good:     { icon: 'circle-check-big', label: 'Healthy' },
+    warning:  { icon: 'triangle-alert', label: 'Watch' },
+    critical: { icon: 'octagon-alert', label: 'Degraded' }
   };
+  var KIND_ICON = { landing: 'layout-template', main: 'globe', chat: 'message-circle' };
   var STATUS_RANK = { good: 0, warning: 1, critical: 2 };
   var KIND_LABEL = { landing: 'Landing', main: 'Main site', chat: 'Chat' };
 
@@ -176,14 +177,28 @@
     return n;
   }
   function clear(node) { while (node.firstChild) node.removeChild(node.firstChild); }
+
+  /* Lucide, inlined (see assets/icons.js). Icons are decorative here — every one
+     of them sits beside text that carries the same meaning — so they are hidden
+     from assistive tech rather than labelled twice. */
+  function icon(name, cls) {
+    var body = (window.LUCIDE || {})[name];
+    var node = svg('svg', {
+      class: 'icon' + (cls ? ' ' + cls : ''), viewBox: '0 0 24 24',
+      fill: 'none', stroke: 'currentColor', 'stroke-width': 2,
+      'stroke-linecap': 'round', 'stroke-linejoin': 'round',
+      'aria-hidden': 'true', focusable: 'false'
+    });
+    if (body) node.innerHTML = body;
+    return node;
+  }
   function swatch(color, cls) {
     var s = el('span', { class: cls || 'swatch' }); s.style.background = color; return s;
   }
   function statusPill(status) {
     var m = STATUS_META[status];
     return el('span', { class: 'pill', 'data-status': status }, [
-      el('span', { class: 'glyph', 'aria-hidden': 'true', text: m.glyph }),
-      el('span', { text: m.label })
+      icon(m.icon, 'icon--sm'), el('span', { text: m.label })
     ]);
   }
   function siteKey(s) {
@@ -262,7 +277,7 @@
     var up = change > 0;
     var dir = flat ? 'flat' : ((up && !opts.lowerIsBetter) || (!up && opts.lowerIsBetter)) ? 'good' : 'bad';
     span.setAttribute('data-dir', dir);
-    span.appendChild(el('span', { class: 'arrow', 'aria-hidden': 'true', text: flat ? '→' : up ? '↑' : '↓' }));
+    span.appendChild(icon(flat ? 'minus' : up ? 'arrow-up' : 'arrow-down', 'icon--xs'));
     span.appendChild(el('span', { text: (up ? '+' : '') + (change * 100).toFixed(1) + '%' }));
     span.appendChild(el('span', { class: 'vs', text: opts.vs || 'vs. prior' }));
     return span;
@@ -309,7 +324,7 @@
         type: 'button', class: 'nav-main', 'aria-current': String(state.site === s.id && !state.page),
         onclick: function () { select(s.id, null); }
       }, [
-        el('span', { class: 'status-dot', 'data-status': status, 'aria-hidden': 'true' }),
+        el('span', { class: 'status-dot', 'data-status': status }, [icon(STATUS_META[status].icon, 'icon--sm')]),
         el('span', { class: 'nav-name' }, [
           el('span', { text: s.name }),
           // Second line is the status, not the domain: at 240px the domain and a
@@ -328,7 +343,7 @@
           type: 'button', class: 'nav-chev', 'aria-expanded': String(open), 'aria-controls': listId,
           'aria-label': (open ? 'Hide' : 'Show') + ' pages of ' + s.name,
           onclick: function () { setExpanded(s.id, !open); renderNav(); }
-        }, [el('span', { class: 'chev', 'aria-hidden': 'true', text: '⌃' })]));
+        }, [icon('chevron-down', 'chev')]));
       }
       host.appendChild(row);
 
@@ -342,7 +357,7 @@
           type: 'button', class: 'nav-sub', 'aria-current': String(state.page === p.id),
           onclick: function () { select(s.id, p.id); }
         }, [
-          el('span', { class: 'page-kind', 'data-kind': p.kind, 'aria-hidden': 'true' }),
+          el('span', { class: 'page-kind', 'data-kind': p.kind }, [icon(KIND_ICON[p.kind], 'icon--sm')]),
           el('span', { class: 'nav-name' }, [
             el('span', { text: p.name }),
             el('span', { class: 'nav-domain', text: pct(k.conversion, 2) + ' conversion' })
@@ -406,7 +421,7 @@
     list.forEach(function (inc) {
       var ongoing = inc.days.indexOf(latest) >= 0;
       host.appendChild(el('div', { class: 'banner', 'data-status': ongoing ? 'critical' : 'warning' }, [
-        el('span', { class: 'glyph', 'aria-hidden': 'true', text: ongoing ? '■' : '▲' }),
+        icon(ongoing ? 'octagon-alert' : 'triangle-alert'),
         el('span', {}, [
           el('strong', { text: siteName(inc.site) + ' · ' + inc.label }),
           el('span', { text: ' — ' + inc.days.length + ' affected days, '
@@ -603,7 +618,7 @@
 
     if (!found.length) {
       host.appendChild(el('li', { class: 'alert', 'data-status': 'good' }, [
-        el('span', { class: 'glyph', 'aria-hidden': 'true', text: '●' }),
+        icon('circle-check-big', 'icon--sm'),
         el('span', { text: 'Everything in range for this period.' })
       ]));
       return;
@@ -612,7 +627,7 @@
     var CAP = 6;
     found.slice(0, CAP).forEach(function (a) {
       host.appendChild(el('li', { class: 'alert', 'data-status': a.status }, [
-        el('span', { class: 'glyph', 'aria-hidden': 'true', text: STATUS_META[a.status].glyph }),
+        icon(STATUS_META[a.status].icon, 'icon--sm'),
         el('span', {}, [
           el('strong', { text: a.label }),
           el('span', { text: ' — ' + a.text })
@@ -942,7 +957,7 @@
         onclick: function () { select(r.site.id, r.page.id); }
       });
       head.appendChild(el('span', { class: 'series-key' }, [
-        el('span', { class: 'page-kind', 'data-kind': r.page.kind, 'aria-hidden': 'true' }), nameBtn
+        el('span', { class: 'page-kind', 'data-kind': r.page.kind }, [icon(KIND_ICON[r.page.kind], 'icon--sm')]), nameBtn
       ]));
       if (state.site === 'all') head.appendChild(el('span', { class: 'row-sub', text: r.site.name }));
       tr.appendChild(head);
@@ -1159,7 +1174,7 @@
       // says whether a campaign did well, and one a reader can check.
       var diff = r.c.open - r.site.email.open;
       var vs = el('span', { class: 'delta', 'data-dir': Math.abs(diff) < 0.005 ? 'flat' : diff > 0 ? 'good' : 'bad' }, [
-        el('span', { class: 'arrow', 'aria-hidden': 'true', text: Math.abs(diff) < 0.005 ? '→' : diff > 0 ? '↑' : '↓' }),
+        icon(Math.abs(diff) < 0.005 ? 'minus' : diff > 0 ? 'arrow-up' : 'arrow-down', 'icon--xs'),
         el('span', { text: (diff > 0 ? '+' : '') + (diff * 100).toFixed(1) + ' pts' })
       ]);
 
@@ -1253,7 +1268,9 @@
     var sub = document.getElementById('page-sub');
     clear(sub);
     if (s) {
-      sub.appendChild(el('a', { href: 'https://' + s.domain, target: '_blank', rel: 'noreferrer noopener', text: s.domain }));
+      var link = el('a', { href: 'https://' + s.domain, target: '_blank', rel: 'noreferrer noopener' },
+        [el('span', { text: s.domain }), icon('external-link', 'icon--xs')]);
+      sub.appendChild(link);
       sub.appendChild(el('span', { text: ' · ' + dayLong(dates[0]) + ' – ' + dayLong(dates[dates.length - 1]) }));
     } else {
       sub.textContent = D.sites.length + ' websites · ' + dayLong(dates[0]) + ' – ' + dayLong(dates[dates.length - 1]);
@@ -1319,7 +1336,7 @@
         class: 'fold', type: 'button',
         'aria-expanded': String(open),
         'aria-label': (open ? 'Collapse ' : 'Expand ') + heading.textContent
-      }, [el('span', { class: 'chev', 'aria-hidden': 'true', text: '⌃' })]);
+      }, [icon('chevron-down', 'chev')]);
 
       function apply(next) {
         card.setAttribute('data-folded', String(!next));
@@ -1369,7 +1386,17 @@
     });
   }
 
+  /* Hydrate the icons declared in the static markup with data-icon. */
+  function hydrateIcons() {
+    document.querySelectorAll('[data-icon]').forEach(function (host) {
+      var name = host.getAttribute('data-icon');
+      var cls = 'icon--sm';
+      host.insertBefore(icon(name, cls), host.firstChild);
+    });
+  }
+
   function init() {
+    hydrateIcons();
     document.querySelectorAll('#density button').forEach(function (b) {
       b.addEventListener('click', function () {
         state.density = b.getAttribute('data-density');

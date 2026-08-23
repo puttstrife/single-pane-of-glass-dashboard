@@ -155,6 +155,17 @@ on outside click or Escape, and returns focus, but its three items do nothing. W
 them to your admin's auth before shipping, and replace the "Admin User /
 admin@example.com" identity with the signed-in one.
 
+## Icons
+
+[Lucide](https://lucide.dev) (ISC), **inlined** in `assets/icons.js` rather than
+loaded from a CDN — the published page runs under a Content-Security-Policy that
+blocks external scripts, and inlining keeps the file openable straight from disk.
+Only the 20 icons actually used are bundled, at about 3KB.
+
+Every icon sits beside text that carries the same meaning, so all of them are
+`aria-hidden` — status is still icon **plus** label, never icon alone. Refresh them
+with `scripts/fetch-icons.sh`.
+
 ## Design notes
 
 - **The series palette is validated, not eyeballed.** The three site hues —
@@ -190,8 +201,10 @@ admin@example.com" identity with the signed-in one.
 index.html                 markup, sidebar shell and card grid
 assets/styles.css          design-system tokens + components
 assets/app.js              state, filters, SVG charts, tables, alerts
+assets/icons.js            inlined Lucide icon set (window.LUCIDE)
 assets/data.js             generated dataset (window.DASHBOARD_DATA)
 data/metrics.json          same dataset as JSON
 scripts/generate-data.mjs  seeded generator, anchored to the source figures
+scripts/fetch-icons.sh     refetches the Lucide icons used here
 design/                    the source design canvas this is built from
 ```
