@@ -134,8 +134,16 @@ h1, h2, h3, p { margin: 0; }
   font-size: 11px; font-weight: 500; letter-spacing: 0.04em;
   text-transform: uppercase; color: var(--muted);
 }
-.segmented--fill { display: grid; grid-template-columns: 1fr 1fr; width: 100%; }
-.segmented--fill button { padding: 6px 4px; min-height: 30px; font-size: 12px; }
+/* Stacked, not side by side: "Comfortable" needs ~129px and half of a 240px
+   sidebar is ~85px, so a two-up row pushed the second label past the edge.
+   Doubled class so this beats the base `.segmented` rule regardless of which
+   one the stylesheet declares last. */
+.segmented.segmented--fill { display: grid; grid-template-columns: 1fr; width: 100%; gap: 2px; }
+.segmented.segmented--fill button {
+  justify-content: flex-start;
+  padding: 6px var(--sp-3); min-height: 32px; font-size: 12.5px;
+  white-space: nowrap;
+}
 
 .account { position: relative; }
 .account-btn {
@@ -546,8 +554,7 @@ tr[data-selected="false"] { opacity: 0.42; }
 :root[data-density="compact"] .tile .value { font-size: 22px; }
 :root[data-density="compact"] .tiles { gap: var(--sp-4) var(--sp-4); }
 :root[data-density="compact"] .alert { padding: 7px var(--sp-3); font-size: 13px; }
-:root[data-density="compact"] .segmented--fill button { gap: 4px; }
-:root[data-density="compact"] .segmented--fill .icon { display: none; }
+:root[data-density="compact"] .segmented.segmented--fill button { min-height: 28px; padding: 4px var(--sp-3); }
 :root[data-density="compact"] .alerts { gap: var(--sp-2); }
 :root[data-density="compact"] .banner { padding: var(--sp-3) var(--sp-4); margin-bottom: var(--sp-3); font-size: 13px; }
 :root[data-density="compact"] .split { gap: var(--sp-4); margin-top: var(--sp-4); }
