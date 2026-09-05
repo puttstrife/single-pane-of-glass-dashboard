@@ -36,3 +36,4 @@ venv/
 # Test / coverage
 coverage/
 .pytest_cache/
+.vercel
