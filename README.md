@@ -1,6 +1,6 @@
-# Mettlence BI — dummy-data React dashboard
+# Personal dashboard — dummy-data React dashboard
 
-A dark-first **React + TypeScript + Vite + Tailwind + shadcn/ui + Recharts** business-intelligence frontend prototype. It visualizes deterministic fixtures only for **Votive Society**, **Individualogist**, **Astrolover Sketch**, and **Ask Sabrina**.
+A dark-first **React + TypeScript + Vite + Tailwind + shadcn/ui + Recharts** personal dashboard prototype. It visualizes deterministic fixtures only for **Votive Society**, **Individualogist**, **Astrolover Sketch**, and **Ask Sabrina**.
 
 ## Safety and analytical boundaries
 
