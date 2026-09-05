@@ -1,38 +1,28 @@
-# Mettlence BI — dummy-data frontend prototype
+# Mettlence BI — dummy-data React dashboard
 
-This repository contains a **static, dummy-data-only business-intelligence frontend** for these in-scope properties: **Votive Society**, **Individualogist**, **Astrolover Sketch**, and **Ask Sabrina**. `Unassigned / needs mapping` is an extensibility and mapping-status category, not a property.
+A dark-first **React + TypeScript + Vite + Tailwind + shadcn/ui + Recharts** business-intelligence frontend prototype. It visualizes deterministic fixtures only for **Votive Society**, **Individualogist**, **Astrolover Sketch**, and **Ask Sabrina**.
 
-## Prototype boundaries
+## Safety and analytical boundaries
 
-- **No production deployment.** This is not a production dashboard.
-- **No APIs, connectors, backend code, credentials, local-data reads outside this worktree, or storage.** It makes no live requests and does not use browser storage.
-- Every number, trend, funnel, provenance badge, freshness label, and decision card is **clearly labelled dummy/illustrative data**.
-- The intended eventual model is a **read-only display of authoritative cron-produced artifacts**. This prototype neither creates nor claims to consume those artifacts.
+- **Dummy data; no live connection.** The active `src/` app makes no provider/API requests, reads no local artifacts outside this worktree, uses no credentials, and stores no browser state.
+- Figures and freshness/provenance labels are illustrative deterministic fixtures.
+- The period selector scopes **Maropost email** and **AdSense** only. CPV is a property-scoped latest/lifetime-style dummy snapshot; its period filter does not apply.
+- No combined AdSense + CPV revenue total is shown. Maropost engagement is not attributed revenue, and no subscriber identity data is shown.
+- This is not a deployment or live-data integration.
 
-## What it demonstrates
+The old vanilla files remain only as inactive historical/reference material. `index.html` loads the Vite React entry point, not legacy assets.
 
-- Business navigation: Overview, Email performance, Paid & monetization, Audience readiness, Insights & decisions, and a Data status drawer.
-- Property controls deterministically recompute compatible illustrative fixtures; the dummy period scopes Maropost email and AdSense only. CPV remains a property-scoped latest snapshot/lifetime-style fixture, not period revenue; no controls query, persist, or represent live data.
-- Source-separated Maropost engagement (Sent → Delivered → Opened → Clicked), CPV (Views → Clicks → Conversions), AdSense domain trend, campaign comparison, readiness coverage, and decision hypotheses.
-- Explicit analytical boundaries: no combined AdSense+CPV revenue total; CPV is snapshot/lifetime-style dummy economics; Maropost engagement is not attributed revenue; and no subscriber identity data is shown.
-
-## Run locally
-
-No dependency installation or build is required:
+## Local development
 
 ```bash
-python3 -m http.server 4321
+npm install
+npm run dev
 ```
 
-Open `http://localhost:4321` in a browser.
-
-## Local checks
+## Verification
 
 ```bash
-node scripts/check-dashboard.mjs
-node --check assets/app.js
-node --check assets/data.js
-python3 -m json.tool data/metrics.json >/dev/null
+npm test       # focused dashboard acceptance contract
+npm run check  # TypeScript no-emit check
+npm run build  # test + type check + Vite production build
 ```
-
-The focused acceptance guard verifies required navigation/disclosure and core business sections, rejects excluded property names and legacy concepts, checks that scope controls invoke the renderer, enforces programmatic main-content focus, checks a structural mobile grid rule, and rejects network mechanisms/external URLs plus browser storage usage across active UI files.

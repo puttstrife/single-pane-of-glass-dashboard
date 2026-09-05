@@ -1,0 +1,5 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+@layer base { :root { --background: 222.2 84% 4.9%; --foreground: 210 40% 98%; --card: 222.2 47.4% 11.2%; --card-foreground: 210 40% 98%; --primary: 239 84% 67%; --primary-foreground: 210 40% 98%; --muted: 217.2 32.6% 17.5%; --muted-foreground: 215 20.2% 65.1%; --border: 217.2 32.6% 20%; --input: 217.2 32.6% 20%; --ring: 239 84% 67%; --radius: .75rem; } * { @apply border-border; } body { @apply min-h-screen bg-background text-foreground antialiased; } }
+.recharts-cartesian-axis-tick-value { fill: hsl(var(--muted-foreground)); font-size: 11px; }
