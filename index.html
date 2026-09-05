@@ -1,189 +1,53 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Mettlence — website performance</title>
-<meta name="description" content="Monitors Votive Society, Ask Sabrina and Astrolover Sketch: uptime, load time, funnel, revenue and engagement on one screen.">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap">
-<link rel="stylesheet" href="assets/styles.css">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><rect width='16' height='16' rx='4' fill='%23422AFB'/></svg>">
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Mettlence BI — dummy-data prototype</title>
+  <meta name="description" content="A dummy-data business-intelligence dashboard prototype with no live connection.">
+  <link rel="stylesheet" href="assets/styles.css">
 </head>
 <body>
-<a class="skip-link" href="#main">Skip to dashboard</a>
-
-<div class="app">
-
-  <aside class="sidebar">
-    <div class="wordmark">
-      <span class="wordmark-mark" data-icon="activity" aria-hidden="true"></span>
-      <span class="wordmark-text">Mettlence</span>
-    </div>
-
-    <div class="nav-scroll">
-      <p class="nav-label" id="nav-label">Websites</p>
-      <nav class="nav" id="nav" aria-labelledby="nav-label"></nav>
-      <p class="sidebar-foot" id="sidebar-foot"></p>
-    </div>
-
-    <div class="sidebar-footer">
-      <div class="field field--stack">
-        <span id="density-label">Density</span>
-        <div class="segmented segmented--fill" role="group" aria-labelledby="density-label" id="density">
-          <button type="button" data-density="comfortable" aria-pressed="true" data-icon="rows-2">Comfortable</button>
-          <button type="button" data-density="compact" aria-pressed="false" data-icon="rows-3">Compact</button>
-        </div>
-      </div>
-
-      <!-- Placeholder account block: nothing behind it yet. Wire the menu items
-           to your admin's real auth before shipping. -->
-      <div class="account" id="account">
-        <button class="account-btn" type="button" id="account-btn"
-                aria-expanded="false" aria-haspopup="menu" aria-controls="account-menu">
-          <span class="avatar" aria-hidden="true">AU</span>
-          <span class="account-id">
-            <span class="account-name">Admin User</span>
-            <span class="account-role">admin@example.com</span>
-          </span>
-          <span class="chev" data-icon="chevron-down" aria-hidden="true"></span>
-        </button>
-        <div class="account-menu" id="account-menu" role="menu" hidden>
-          <button role="menuitem" type="button" data-placeholder data-icon="user">Profile</button>
-          <button role="menuitem" type="button" data-placeholder data-icon="settings">Workspace settings</button>
-          <button role="menuitem" type="button" data-placeholder data-icon="log-out">Sign out</button>
-          <p class="account-note">Placeholder — not wired to auth.</p>
-        </div>
-      </div>
-    </div>
+<a class="skip-link" href="#main">Skip to dashboard content</a>
+<div class="shell">
+  <aside class="sidebar" aria-label="Business intelligence navigation">
+    <div class="brand"><span aria-hidden="true">✦</span> Mettlence <small>BI prototype</small></div>
+    <nav class="nav" aria-label="Views">
+      <button class="nav-item active" data-view="overview" aria-current="page">Overview</button>
+      <button class="nav-item" data-view="email">Email performance</button>
+      <button class="nav-item" data-view="paid">Paid &amp; monetization</button>
+      <button class="nav-item" data-view="audience">Audience readiness</button>
+      <button class="nav-item" data-view="insights">Insights &amp; decisions</button>
+    </nav>
+    <button class="status-button" id="status-open" aria-expanded="false" aria-controls="status-panel">Data status <span>→</span></button>
+    <p class="side-note">Read-only display concept<br>Not a production deployment</p>
   </aside>
+  <main id="main" tabindex="-1">
+    <header class="page-head">
+      <div><p class="eyebrow">Business intelligence · dummy-data prototype</p><h1 id="view-title">Decision overview</h1><p id="view-subtitle">Source-aware signals for the next decision, not a live operational console.</p></div>
+      <div class="controls"><label>Property <select id="property" aria-label="Property scope"></select></label><label>Period <select id="period" aria-label="Dummy period scope"></select></label><p class="scope-note">Selected period scopes Maropost email and AdSense only. CPV remains property-scoped as a latest dummy snapshot.</p></div>
+    </header>
+    <section class="disclosure" aria-label="Prototype disclosure"><strong>Dummy data + no live connection.</strong> This UI makes no API request, reads no local data outside this worktree, and stores nothing. Figures are illustrative only; the intended model is a future <strong>read-only display of authoritative cron-produced artifacts</strong>.</section>
+    <section class="opportunity-strip" aria-label="Opportunity and risk summary"><div><span class="tag opportunity">Opportunity</span><strong>Maropost engagement is strongest for Individualogist’s profile-series example.</strong><span>Use as a hypothesis, not attributed revenue.</span></div><div><span class="tag risk">Risk</span><strong>Illustrative AdSense momentum is soft for Ask Sabrina.</strong><span>Review source-specific evidence before acting.</span></div></section>
 
-  <main class="main" id="main">
-
-    <div class="page-head">
-      <div>
-        <h1 id="page-title">All websites</h1>
-        <p class="sub" id="page-sub">—</p>
-      </div>
-      <div class="head-controls">
-        <div class="segmented" role="group" aria-label="Time range" id="ranges"></div>
-      </div>
+    <div id="view-overview" class="view active">
+      <section class="kpi-grid" aria-label="Source-aware KPI cards">
+        <article class="card kpi"><div class="card-top"><span>Email activity</span><span class="badge maropost">Maropost</span></div><strong id="kpi-email">128.4k</strong><p>Sent in dummy period · weekly illustrative freshness</p></article>
+        <article class="card kpi"><div class="card-top"><span>CPV economics</span><span class="badge cpv">CPV snapshot</span></div><strong id="kpi-cpv">$3.78</strong><p>Latest dummy snapshot — period filter does not apply.</p></article>
+        <article class="card kpi"><div class="card-top"><span>AdSense earnings</span><span class="badge adsense">AdSense</span></div><strong id="kpi-adsense">$2,840</strong><p>Dummy source-separated earnings view</p></article>
+        <article class="card kpi"><div class="card-top"><span>Evidence confidence</span><span class="badge readiness">Readiness</span></div><strong id="kpi-confidence">71%</strong><p>Illustrative consent-ready coverage</p></article>
+      </section>
+      <section class="grid two"><article class="card"><div class="section-title"><div><p class="eyebrow">Maropost · dummy weekly cadence</p><h2>Email engagement funnel</h2></div><span class="badge maropost">Source: Maropost</span></div><div class="funnel" id="email-funnel"></div><p class="boundary">Maropost engagement is not attributed revenue. No subscriber identity data is displayed.</p></article>
+      <article class="card"><div class="section-title"><div><p class="eyebrow">CPV snapshot · illustrative</p><h2>CPV funnel</h2></div><span class="badge cpv">Source: CPV</span></div><div class="funnel teal" id="cpv-funnel"></div><p class="boundary">Latest dummy snapshot — period filter does not apply. CPV is property-scoped snapshot/lifetime-style dummy economics, not period revenue.</p></article></section>
+      <section class="grid two"><article class="card"><div class="section-title"><div><p class="eyebrow">AdSense · dummy weekly cadence</p><h2>AdSense domain trend</h2></div><span class="badge adsense">Source: AdSense</span></div><div class="trend" id="adsense-trend" aria-label="Illustrative AdSense trend"></div><div id="adsense-domains"></div></article>
+      <article class="card"><div class="section-title"><div><p class="eyebrow">Mapping status · dummy artifact</p><h2>Audience readiness coverage</h2></div><span class="badge readiness">Readiness</span></div><div class="coverage" id="coverage"></div><p class="boundary">Coverage is an illustrative readiness signal, not a subscriber list or identity record.</p></article></section>
     </div>
 
-    <div id="banner"></div>
-
-    <div class="grid">
-
-      <section class="card card--hero" aria-labelledby="h-hero">
-        <div class="card-head"><h2 id="h-hero">Revenue</h2></div>
-        <p class="hero-label" id="hero-scope">—</p>
-        <p class="hero-value" id="hero-value">—</p>
-        <div class="hero-foot">
-          <span id="hero-delta"></span>
-          <span class="hero-note" id="hero-note"></span>
-        </div>
-        <div class="hero-fill"></div>
-        <div id="hero-spark"></div>
-      </section>
-      <section class="card card--tiles" aria-labelledby="h-tiles">
-        <div class="card-head">
-          <h2 id="h-tiles">Traffic &amp; conversion</h2>
-          <span class="hint">vs. prior equal period</span>
-        </div>
-        <div class="tiles" id="tiles"></div>
-      </section>
-      <section class="card card--7" aria-labelledby="h-health">
-        <div class="card-head">
-          <h2 id="h-health">Site health</h2>
-          <span class="hint" id="health-hint"></span>
-        </div>
-        <div class="table-wrap scroll-cap" id="table-health"></div>
-      </section>
-      <section class="card card--5" aria-labelledby="h-attention">
-        <div class="card-head">
-          <h2 id="h-attention">Needs attention</h2>
-          <span class="hint">Computed from thresholds and period deltas</span>
-        </div>
-        <ul class="alerts scroll-cap" id="alerts"></ul>
-      </section>
-      <section class="card card--half" aria-labelledby="h-rev">
-        <div class="card-head">
-          <h2 id="h-rev">Revenue by day</h2>
-          <button class="toggle-table" type="button" data-table-for="rev" aria-expanded="false" data-icon="table">Table</button>
-        </div>
-        <div class="chart" id="chart-rev"></div>
-        <div class="legend" id="legend-rev" role="group" aria-label="Websites — toggle to emphasise"></div>
-        <div class="table-wrap" id="table-rev" hidden></div>
-      </section>
-      <section class="card card--half" aria-labelledby="h-load">
-        <div class="card-head">
-          <h2 id="h-load">Page load time by day</h2>
-          <button class="toggle-table" type="button" data-table-for="load" aria-expanded="false" data-icon="table">Table</button>
-        </div>
-        <div class="chart" id="chart-load"></div>
-        <div class="legend" id="legend-load" role="group" aria-label="Websites — toggle to emphasise"></div>
-        <div class="table-wrap" id="table-load" hidden></div>
-      </section>
-      <section class="card card--half" aria-labelledby="h-funnel">
-        <div class="card-head">
-          <h2 id="h-funnel">Funnel</h2>
-          <div class="card-actions">
-            <div class="segmented segmented--sm" role="group" aria-label="Funnel surface" id="funnel-surface"></div>
-            <button class="toggle-table" type="button" data-table-for="funnel" aria-expanded="false" data-icon="table">Table</button>
-          </div>
-        </div>
-        <div class="chart" id="chart-funnel"></div>
-        <p class="callout" id="funnel-callout"></p>
-        <div class="table-wrap" id="table-funnel" hidden></div>
-      </section>
-      <section class="card card--half" aria-labelledby="h-mix" data-fold="closed">
-        <div class="card-head">
-          <h2 id="h-mix">Traffic mix</h2>
-          <span class="hint">Share of sessions</span>
-        </div>
-        <div class="table-wrap" id="table-mix"></div>
-      </section>
-      <section class="card" id="card-pages" aria-labelledby="h-pages">
-        <div class="card-head">
-          <h2 id="h-pages">Page versions</h2>
-          <span class="hint" id="pages-hint"></span>
-        </div>
-        <div class="table-wrap scroll-cap" id="table-pages"></div>
-        <p class="callout" id="pages-callout"></p>
-      </section>
-      <section class="card card--7" aria-labelledby="h-score">
-        <div class="card-head">
-          <h2 id="h-score">Scoreboard</h2>
-          <span class="hint">Every site, current range</span>
-        </div>
-        <div class="table-wrap" id="table-score"></div>
-      </section>
-      <section class="card card--5" aria-labelledby="h-chat" data-fold="closed">
-        <div class="card-head">
-          <h2 id="h-chat">Chat &amp; retention</h2>
-          <span class="hint">Per site</span>
-        </div>
-        <div class="table-wrap" id="table-chat"></div>
-      </section>
-      <section class="card" aria-labelledby="h-email" data-fold="closed">
-        <div class="card-head">
-          <h2 id="h-email">Email</h2>
-          <span class="hint" id="email-hint"></span>
-        </div>
-        <div class="table-wrap" id="table-email"></div>
-        <div class="split split--3" id="email-split"></div>
-      </section>
-
-    </div>
-
-    <p class="footnote" id="footnote">—</p>
+    <div id="view-email" class="view"><section class="card"><div class="section-title"><div><p class="eyebrow">Maropost · dummy weekly cadence</p><h2>Campaign comparison</h2></div><span class="badge maropost">Source: Maropost</span></div><div class="table-wrap"><table><thead><tr><th>Campaign</th><th>Sent (k)</th><th>Open rate</th><th>Click rate</th></tr></thead><tbody id="campaigns"></tbody></table></div><p class="boundary">Maropost engagement is not attributed revenue. No subscriber identity data.</p></section></div>
+    <div id="view-paid" class="view"><section class="grid two"><article class="card"><h2>CPV snapshot economics</h2><div class="funnel teal" id="cpv-funnel-detail"></div><p class="boundary">Latest dummy snapshot — period filter does not apply. Lifetime-style dummy economics; it is not revenue for the selected period.</p></article><article class="card"><h2>AdSense domain trend</h2><div class="trend" id="adsense-trend-detail"></div><div id="adsense-domains-detail"></div></article></section><section class="card notice"><strong>Analytical boundary:</strong> No combined AdSense+CPV revenue total is shown. Compare sources only in their own context.</section></div>
+    <div id="view-audience" class="view"><section class="card"><div class="section-title"><div><p class="eyebrow">Readiness artifact · illustrative</p><h2>Audience readiness coverage</h2></div><span class="badge readiness">Dummy freshness: weekly</span></div><div class="coverage large" id="coverage-detail"></div><p class="boundary">No subscriber identity data is collected, displayed, or stored in this prototype. “Unassigned / needs mapping” is a readiness and mapping workflow metric, not a property selector option.</p></section></div>
+    <div id="view-insights" class="view"><section class="card"><div class="section-title"><div><p class="eyebrow">Decision support · illustrative</p><h2>Decision hypotheses</h2></div><span class="badge readiness">Evidence confidence</span></div><div class="decision-grid" id="decisions"></div><p class="boundary">These are hypotheses from dummy data; they are not automated decisions, claims, or recommendations based on live evidence.</p></section></div>
   </main>
-
 </div>
-
-<script src="assets/icons.js"></script>
-<script src="assets/data.js"></script>
-<script src="assets/app.js"></script>
-</body>
-</html>
+<aside class="status-panel" id="status-panel" aria-label="Data status" hidden><div class="section-title"><h2>Data status</h2><button id="status-close" aria-label="Close data status">×</button></div><p><strong>Prototype state:</strong> dummy data only.</p><dl><dt>Connection</dt><dd>No live connection</dd><dt>Read scope</dt><dd>No API or Local Data reads</dd><dt>Storage</dt><dd>None</dd><dt>Future model</dt><dd>Read-only authoritative cron-produced artifacts</dd><dt>Production</dt><dd>No production deployment</dd></dl><p class="boundary">Source badges indicate intended provenance and illustrative cadence; they do not claim a connector exists.</p></aside>
+<script src="assets/data.js"></script><script src="assets/app.js"></script>
+</body></html>
