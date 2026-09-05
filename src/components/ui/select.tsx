@@ -1,0 +1,8 @@
+import * as SelectPrimitive from '@radix-ui/react-select'
+import { Check, ChevronDown } from 'lucide-react'
+import { cn } from '@/lib/utils'
+const Select = SelectPrimitive.Root; const SelectValue = SelectPrimitive.Value
+const SelectTrigger = ({ className, children, ...props }: React.ComponentPropsWithoutRef<typeof SelectPrimitive.Trigger>) => <SelectPrimitive.Trigger className={cn('flex h-9 items-center justify-between rounded-md border border-input bg-transparent px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring', className)} {...props}>{children}<ChevronDown className="h-4 w-4 opacity-60" /></SelectPrimitive.Trigger>
+const SelectContent = ({ className, children, ...props }: React.ComponentPropsWithoutRef<typeof SelectPrimitive.Content>) => <SelectPrimitive.Portal><SelectPrimitive.Content className={cn('z-50 overflow-hidden rounded-md border border-border bg-card p-1 text-card-foreground shadow-lg', className)} {...props}><SelectPrimitive.Viewport>{children}</SelectPrimitive.Viewport></SelectPrimitive.Content></SelectPrimitive.Portal>
+const SelectItem = ({ className, children, ...props }: React.ComponentPropsWithoutRef<typeof SelectPrimitive.Item>) => <SelectPrimitive.Item className={cn('relative flex cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none data-[highlighted]:bg-muted', className)} {...props}><span className="absolute left-2"><SelectPrimitive.ItemIndicator><Check className="h-3.5 w-3.5" /></SelectPrimitive.ItemIndicator></span><SelectPrimitive.ItemText>{children}</SelectPrimitive.ItemText></SelectPrimitive.Item>
+export { Select, SelectValue, SelectTrigger, SelectContent, SelectItem }

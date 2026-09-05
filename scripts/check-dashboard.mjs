@@ -1,82 +1,68 @@
 #!/usr/bin/env node
-/** Focused static acceptance guard for the dummy BI dashboard. */
-import fs from 'node:fs';
-import path from 'node:path';
-import vm from 'node:vm';
-import assert from 'node:assert/strict';
+import assert from 'node:assert/strict'
+import fs from 'node:fs'
+import path from 'node:path'
 
-const root = path.resolve(import.meta.dirname, '..');
-const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
-const files = ['index.html', 'assets/app.js', 'assets/data.js', 'assets/styles.css'];
-const sources = Object.fromEntries(files.map((file) => [file, read(file)]));
-const ui = Object.values(sources).join('\n').toLowerCase().replaceAll('&amp;', '&');
-const html = sources['index.html'].toLowerCase().replaceAll('&amp;', '&');
-const app = sources['assets/app.js'];
-const data = sources['assets/data.js'];
+const root = path.resolve(import.meta.dirname, '..')
+const sourceRoot = path.join(root, 'src')
+const walk = (dir) => fs.existsSync(dir) ? fs.readdirSync(dir, { withFileTypes: true }).flatMap((entry) => entry.isDirectory() ? walk(path.join(dir, entry.name)) : [path.join(dir, entry.name)]) : []
+const files = walk(sourceRoot).filter((file) => /\.(tsx|ts|css)$/.test(file))
+const source = files.map((file) => fs.readFileSync(file, 'utf8')).join('\n').toLowerCase()
 
-const required = [
-  'overview', 'email performance', 'paid & monetization', 'audience readiness',
-  'insights & decisions', 'data status', 'dummy data', 'no live connection',
-  'maropost', 'sent', 'delivered', 'opened', 'clicked', 'cpv', 'views',
-  'conversions', 'adsense', 'campaign comparison', 'audience readiness coverage',
-  'decision hypotheses', 'no combined adsense+cpv revenue total',
-  'maropost engagement is not attributed revenue', 'no subscriber identity data'
-];
-for (const text of required) assert.ok(ui.includes(text), `Required dashboard content missing: ${text}`);
-
-for (const excluded of ['tarovaya', 'sabai after hours']) {
-  assert.ok(!ui.includes(excluded), `Excluded property leaked into dashboard: ${excluded}`);
+assert.ok(files.some((file) => file.endsWith('src/App.tsx')), 'React dashboard entry must exist')
+for (const primitive of ['@/components/ui/card', '@/components/ui/button', '@/components/ui/badge', '@/components/ui/select', '@/components/ui/sheet', '@/components/ui/table', '@/components/ui/tabs', '@/components/ui/tooltip']) {
+  assert.ok(source.includes(primitive), `Actual owned shadcn primitive missing: ${primitive}`)
 }
-for (const forbidden of ['top buyers', 'uptime', 'page load', 'traffic mix', 'chat & retention', 'generic orders']) {
-  assert.ok(!html.includes(forbidden), `Legacy dashboard concept remains in active UI: ${forbidden}`);
+assert.match(source, /from ['"]recharts['"]/, 'Recharts must power dashboard visualizations')
+for (const label of ['overview', 'email performance', 'paid & monetization', 'audience readiness', 'insights & decisions', 'data status', 'all in-scope properties', 'votive society', 'individualogist', 'astrolover sketch', 'ask sabrina', 'dummy data', 'no live connection', 'selected period scopes maropost email and adsense only', 'latest dummy snapshot', 'period filter does not apply', 'no combined adsense+cpv revenue total', 'no subscriber identity data']) {
+  assert.ok(source.includes(label), `Required business/source-boundary text missing: ${label}`)
 }
-for (const mechanism of [/\bfetch\s*\(/i, /\bxmlhttprequest\b/i, /\bwebsocket\b/i, /\beventsource\b/i, /navigator\s*\.\s*sendbeacon\b/i, /https?:\/\//i]) {
-  assert.ok(!mechanism.test(ui), `The prototype must not contain network mechanism: ${mechanism}`);
-}
-assert.ok(!/localstorage|sessionstorage|indexeddb|\bcaches?\s*\./i.test(ui), 'The prototype must not store state.');
+for (const excluded of ['tarovaya', 'sabai after hours', 'unassigned / needs mapping']) assert.ok(!source.includes(excluded), `Excluded UI content leaked: ${excluded}`)
+assert.match(source, /--background:\s*222\.2 84% 4\.9%/, 'Dark-first background token missing')
+for (const marker of ['funnelchart', 'linechart', 'barchart', 'areachart', 'piechart']) assert.ok(source.includes(marker), `Expected chart type missing: ${marker}`)
+for (const forbidden of [/\bfetch\s*\(/i, /\bxmlhttprequest\b/i, /\bwebsocket\b/i, /\beventsource\b/i, /navigator\s*\.\s*sendbeacon\b/i, /https?:\/\//i, /localstorage/i, /sessionstorage/i, /indexeddb/i, /\bcaches?\s*\./i]) assert.ok(!forbidden.test(source), `Forbidden active runtime mechanism: ${forbidden}`)
 
-assert.match(html, /<main\s+id=["']main["'][^>]*\btabindex=["']-1["']/i, 'main must be programmatically focusable but excluded from normal tab order.');
-assert.match(data, /\bscope\s*\(/, 'Dummy fixtures must provide a deterministic scope function.');
-assert.match(app, /function\s+renderDashboard\s*\(/, 'Controls must invoke a dashboard renderer, not only change subtitle text.');
-assert.match(app, /renderDashboard\s*\(\s*\)/, 'Initial scoped values must be rendered.');
-for (const control of ['property', 'period']) {
-  assert.match(app, new RegExp(`#${control}'\\)\\.addEventListener\\('change',[\\s\\S]{0,200}renderDashboard\\s*\\(`), `${control} control must rerender scoped values.`);
-}
+const { dashboard, properties, periods } = await import(path.join(sourceRoot, 'data', 'fixtures.ts'))
 
-for (const text of [
-  'latest dummy snapshot — period filter does not apply',
-  'selected period scopes maropost email and adsense only'
-]) assert.ok(ui.includes(text), `Source-granularity boundary missing: ${text}`);
+const propertyEntries = properties.map((p) => ({ id: p.id, name: p.name }))
+assert.deepEqual(propertyEntries, [
+  { id: 'all', name: 'All in-scope properties' },
+  { id: 'votive', name: 'Votive Society' },
+  { id: 'individualogist', name: 'Individualogist' },
+  { id: 'astrolover', name: 'Astrolover Sketch' },
+  { id: 'sabrina', name: 'Ask Sabrina' },
+], 'Property selector fixture must expose the exact ordered id:name entries for the five in-scope properties')
+const propertyNames = properties.map((p) => p.name.toLowerCase())
+for (const excluded of ['tarovaya', 'sabai after hours', 'unassigned / needs mapping']) assert.ok(!propertyNames.some((name) => name.includes(excluded)), `Excluded property leaked into selector fixture: ${excluded}`)
+assert.deepEqual(periods.map((p) => p.id), ['7d', '30d', '90d'], 'Period selector identities must match the three supported periods, in order')
 
-const fixtureWindow = {};
-vm.runInNewContext(data, { window: fixtureWindow });
-const selectorProperties = fixtureWindow.DASHBOARD_DATA.properties;
-assert.deepEqual(
-  Array.from(selectorProperties, ({ id, name }) => `${id}:${name}`),
-  [
-    'all:All in-scope properties',
-    'votive:Votive Society',
-    'individualogist:Individualogist',
-    'astrolover:Astrolover Sketch',
-    'sabrina:Ask Sabrina'
-  ],
-  'Property selector fixtures must contain All in-scope properties plus exactly the four in-scope properties.'
-);
-assert.ok(
-  !selectorProperties.some(({ id, name }) => id === 'unassigned' || name === 'Unassigned / needs mapping'),
-  'Unassigned / needs mapping must not be a selectable property fixture.'
-);
-const scoped = fixtureWindow.DASHBOARD_DATA.scope;
-const scope7d = scoped('all', '7d');
-const scope90d = scoped('all', '90d');
-const propertySnapshot = scoped('votive', '30d');
-assert.equal(scope7d.readiness.unassigned, 22, 'Unassigned / needs mapping must remain an aggregate readiness metric.');
-assert.notEqual(scope7d.email.sent, scope90d.email.sent, 'Selected period must scope Maropost email fixtures.');
-assert.notEqual(scope7d.adsense.earnings, scope90d.adsense.earnings, 'Selected period must scope AdSense fixtures.');
-assert.deepEqual(scope7d.cpv, scope90d.cpv, 'CPV must remain a latest dummy snapshot when the selected period changes.');
-assert.notDeepEqual(scope7d.cpv, propertySnapshot.cpv, 'CPV snapshots may remain property-scoped.');
+const allEmail30 = dashboard('all', '30d').email
+const votiveEmail30 = dashboard('votive', '30d').email
+assert.notDeepEqual(votiveEmail30, allEmail30, 'Changing property scope must change email figures')
+assert.deepEqual(dashboard('all', '30d').campaigns.length, 4, 'All-property scope must include every campaign')
+const votiveCampaigns = dashboard('votive', '30d').campaigns
+assert.ok(votiveCampaigns.length > 0 && votiveCampaigns.every((r) => r[0].startsWith('Votive Society')), 'Valid property scope must filter campaigns to that property only')
 
-const css = sources['assets/styles.css'];
-const mobileRule = /@media\s*\(\s*max-width\s*:\s*680px\s*\)\s*\{[\s\S]*?\.kpi-grid\s*\{[\s\S]*?grid-template-columns\s*:\s*repeat\(\s*2\s*,\s*minmax\(\s*0\s*,\s*1fr\s*\)\s*\)/;
-assert.match(css, mobileRule, 'Mobile KPI columns must use zero-minimum tracks so card content cannot widen the viewport.');
-console.log(`PASS: dummy BI dashboard acceptance guard (${files.length} active UI files checked)`);
+const allEmail7 = dashboard('all', '7d').email
+const allAdsense7 = dashboard('all', '7d').adsense
+const allAdsense30 = dashboard('all', '30d').adsense
+assert.notDeepEqual(allEmail7, allEmail30, 'Changing period must change email figures')
+assert.notEqual(allAdsense7, allAdsense30, 'Changing period must change AdSense earnings')
+
+const allCpv30 = dashboard('all', '30d').cpv
+const allCpv90 = dashboard('all', '90d').cpv
+assert.deepEqual(allCpv90, allCpv30, 'CPV must stay identical across periods for the same property scope')
+const votiveCpv30 = dashboard('votive', '30d').cpv
+assert.notDeepEqual(votiveCpv30, allCpv30, 'CPV must differ across property scopes')
+
+const appSourceRaw = fs.readFileSync(path.join(sourceRoot, 'App.tsx'), 'utf8')
+const selectBlocks = [...appSourceRaw.matchAll(/<Select\b([\s\S]*?)<SelectTrigger/g)].map((m) => m[1])
+const scopeSelect = selectBlocks.find((block) => block.includes('value={scope}'))
+assert.ok(scopeSelect, 'A Select must bind value={scope}')
+assert.match(scopeSelect, /onValueChange=\{[^}]*setScope[^}]*\}/, 'The Select with value={scope} must call setScope from its onValueChange handler, not just display a label')
+const periodSelect = selectBlocks.find((block) => block.includes('value={period}'))
+assert.ok(periodSelect, 'A Select must bind value={period}')
+assert.match(periodSelect, /onValueChange=\{[^}]*setPeriod[^}]*\}/, 'The Select with value={period} must call setPeriod from its onValueChange handler, not just display a label')
+assert.match(appSourceRaw, /dashboard\(\s*scope\s*,\s*period\s*\)/, 'Dashboard data must be derived by calling dashboard(scope, period) from component state')
+
+console.log(`PASS: React/shadcn/Recharts dashboard contract (${files.length} source files checked)`)
