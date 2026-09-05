@@ -18,11 +18,64 @@ for (const label of ['overview', 'email performance', 'paid & monetization', 'au
   assert.ok(source.includes(label), `Required business/source-boundary text missing: ${label}`)
 }
 for (const excluded of ['tarovaya', 'sabai after hours', 'unassigned / needs mapping']) assert.ok(!source.includes(excluded), `Excluded UI content leaked: ${excluded}`)
+
+const brandingMarkers = [
+  [109,101,116,116,108,101,110,99,101],
+].map((chars) => String.fromCharCode(...chars))
+const activeText = [
+  ...files.map((file) => fs.readFileSync(file, 'utf8')),
+  fs.readFileSync(path.join(root, 'index.html'), 'utf8'),
+  fs.readFileSync(path.join(root, 'README.md'), 'utf8'),
+].join('\n').toLowerCase()
+for (const marker of brandingMarkers) assert.ok(!activeText.includes(marker), `Branding marker leaked into active dashboard material: ${marker}`)
+
+// Subscriber intelligence tab: future-ready, dummy-only, sanitized-aggregate UI for two named cron jobs.
+for (const label of [
+  'subscriber intelligence',
+  'maropost-read-only-subscriber-collection',
+  'maropost-subscriber-collection-progress',
+  'unique subscribers',
+  'eligible subscribers',
+  'consent-ready subscribers',
+  'needs-mapping subscribers',
+  'illustrative list a',
+  'illustrative list b',
+  'illustrative list c',
+  'collection progress',
+  'illustrative last successful subscriber collection',
+  'illustrative subscriber collection status',
+  'illustrative collection activity',
+  'not an audience-size trend',
+  'illustrative dummy data',
+  'no live cron connection',
+  'top subscribers by revenue unavailable',
+  'email-attributed revenue over time unavailable',
+  'campaign revenue performance unavailable',
+  'safe sanitized attribution is not connected',
+]) {
+  assert.ok(source.includes(label), `Required subscriber-intelligence text missing: ${label}`)
+}
+// No fabricated revenue chart/table for the commercial analysis card — only the three explicit unavailable states.
+for (const forbiddenPii of ['contact id', 'first name', 'last name', 'email address', 'phone number', 'street address', 'ip address', 'subscriber email', 'subscriber name']) {
+  assert.ok(!source.includes(forbiddenPii), `PII-shaped content leaked into subscriber-intelligence UI: ${forbiddenPii}`)
+}
 assert.match(source, /--background:\s*222\.2 84% 4\.9%/, 'Dark-first background token missing')
 for (const marker of ['funnelchart', 'linechart', 'barchart', 'areachart', 'piechart']) assert.ok(source.includes(marker), `Expected chart type missing: ${marker}`)
 for (const forbidden of [/\bfetch\s*\(/i, /\bxmlhttprequest\b/i, /\bwebsocket\b/i, /\beventsource\b/i, /navigator\s*\.\s*sendbeacon\b/i, /https?:\/\//i, /localstorage/i, /sessionstorage/i, /indexeddb/i, /\bcaches?\s*\./i]) assert.ok(!forbidden.test(source), `Forbidden active runtime mechanism: ${forbidden}`)
 
-const { dashboard, properties, periods } = await import(path.join(sourceRoot, 'data', 'fixtures.ts'))
+const { dashboard, properties, periods, subscriberIntelligence, subscriberIntelligenceJobs } = await import(path.join(sourceRoot, 'data', 'fixtures.ts'))
+
+assert.ok(subscriberIntelligence, 'subscriberIntelligence fixture must exist')
+assert.equal(subscriberIntelligenceJobs.length, 2, 'Exactly two subscriber-collection cron jobs must be represented')
+assert.deepEqual(subscriberIntelligenceJobs.map((j) => j.name).sort(), ['maropost-read-only-subscriber-collection', 'maropost-subscriber-collection-progress'], 'Job names fixture must match the two named cron jobs exactly')
+assert.ok(subscriberIntelligenceJobs.every((j) => /illustrative/i.test(j.status) && /no live cron connection/i.test(j.lastRun)), 'Each job entry must be clearly labelled illustrative dummy status / no live cron connection')
+assert.equal(subscriberIntelligence.perList.length, 3, 'Exactly three illustrative per-list subscriber counts must be shown')
+assert.ok(subscriberIntelligence.perList.every((l) => /^Illustrative list [A-C]$/.test(l.name)), 'Per-list names must use neutral illustrative labels (A, B, C)')
+assert.ok(Array.isArray(subscriberIntelligence.activity) && subscriberIntelligence.activity.length > 0, 'Illustrative collection activity series must exist')
+const fixtureJson = (JSON.stringify(subscriberIntelligence) + JSON.stringify(subscriberIntelligenceJobs)).toLowerCase()
+for (const forbidden of ['email', 'contact id', 'first name', 'last name', 'phone', 'address', '@']) {
+  assert.ok(!fixtureJson.includes(forbidden), `PII-shaped field leaked into subscriber intelligence fixture data: ${forbidden}`)
+}
 
 const propertyEntries = properties.map((p) => ({ id: p.id, name: p.name }))
 assert.deepEqual(propertyEntries, [
@@ -31,7 +84,7 @@ assert.deepEqual(propertyEntries, [
   { id: 'individualogist', name: 'Individualogist' },
   { id: 'astrolover', name: 'Astrolover Sketch' },
   { id: 'sabrina', name: 'Ask Sabrina' },
-], 'Property selector fixture must expose the exact ordered id:name entries for the five in-scope properties')
+], 'Property selector fixture must expose the exact ordered id:name entries for the approved properties')
 const propertyNames = properties.map((p) => p.name.toLowerCase())
 for (const excluded of ['tarovaya', 'sabai after hours', 'unassigned / needs mapping']) assert.ok(!propertyNames.some((name) => name.includes(excluded)), `Excluded property leaked into selector fixture: ${excluded}`)
 assert.deepEqual(periods.map((p) => p.id), ['7d', '30d', '90d'], 'Period selector identities must match the three supported periods, in order')
